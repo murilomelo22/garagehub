@@ -1,0 +1,192 @@
+{% extends 'base.html' %}{% from 'macros.html' import avatar, icon, csrf_field %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">CONECTADOS PELA MESMA PAIXÃO</span>
+      <h1>
+        Seu feed<span class="live-badge"><span class="status-dot"></span> GARAGE LIFE</span>
+      </h1>
+      <p>O que está acontecendo nas garagens que você acompanha.</p>
+    </div>
+    <a class="btn btn-secondary" href="{{ url_for('garagem.create') }}">{{ icon('plus', 18) }} Novo projeto</a>
+  </div>
+  <section class="feed-banner">
+    <div>
+      <span class="eyebrow">DRIVEN BY PASSION.</span>
+      <h2>
+        Mais que carros.
+        <br>
+        Uma comunidade.
+      </h2>
+      <a href="{{ url_for('social.friends') }}">Encontre sua galera {{ icon('arrow', 16) }}</a>
+    </div>
+    <img src="{{ url_for('static',filename='img/car.svg') }}"
+         alt="Carro esportivo vermelho ilustrado">
+  </section>
+  <div class="feed-layout">
+    <div>
+      <form method="post"
+            action="{{ url_for('social.create_post') }}"
+            enctype="multipart/form-data"
+            class="panel composer">
+        {{ csrf_field() }}
+        <div class="composer-top">
+          {{ avatar(current_user) }}
+          <label class="sr-only" for="post-text">Texto do post</label>
+          <textarea id="post-text"
+                    name="text"
+                    rows="2"
+                    maxlength="2000"
+                    placeholder="Qual é a novidade na sua garagem, {{ current_user.username }}?"></textarea>
+        </div>
+        <div class="composer-preview" hidden>
+          <img alt="Prévia da foto">
+          <button type="button" class="btn btn-quiet btn-small" data-clear-photo>Remover foto</button>
+        </div>
+        <div class="composer-bottom">
+          <label class="photo-button">
+            {{ icon('image', 18) }} <span>Adicionar foto</span>
+            <input type="file"
+                   name="photo"
+                   accept="image/jpeg,image/png,image/webp"
+                   data-photo-preview>
+            <small data-photo-name></small>
+          </label>
+          <button class="btn btn-primary btn-small">Publicar {{ icon('arrow', 16) }}</button>
+        </div>
+      </form>
+      <div class="feed-label">
+        <span>ÚLTIMAS DA COMUNIDADE</span><span>Mais recentes primeiro</span>
+      </div>
+      {% for post in page.items %}
+        <article class="panel post" id="post-{{ post.id }}">
+          <div class="post-header">
+            <a class="account"
+               href="{{ url_for('perfil.public',username=post.author.username) }}">{{ avatar(post.author) }}<span><strong>{{ post.author.username }}</strong><small>{{ post.author.city or 'Entusiasta automotivo' }}</small></span></a><time datetime="{{ post.created_at.isoformat() }}Z">{{ post.created_at.strftime("%d/%m · %H:%M") }} UTC</time>
+          </div>
+          {% if post.text %}<p class="post-text preserve-lines">{{ post.text }}</p>{% endif %}
+          {% if post.photo %}
+            <img class="post-photo"
+                 src="{{ url_for('uploaded_file',filename=post.photo) }}"
+                 alt="Foto publicada por {{ post.author.username }}"
+                 loading="lazy">
+          {% endif %}
+          <div class="post-actions">
+            <form method="post" action="{{ url_for('social.like',post_id=post.id) }}">
+              {{ csrf_field() }}
+              <button class="reaction {{ 'liked' if post.id in liked_ids }}"
+                      aria-label="{{ 'Descurtir' if post.id in liked_ids else 'Curtir' }} post"
+                      aria-pressed="{{ 'true' if post.id in liked_ids else 'false' }}">
+                {{ icon('heart', 19) }} {{ post.likes|length }}
+              </button>
+            </form>
+            <button class="reaction" type="button" data-focus="comment-{{ post.id }}">
+              {{ icon('comment', 19) }} {{ post.comments|length }} <span>Comentários</span>
+            </button>
+            {% if current_user.id == post.user_id %}
+              <form class="push-right"
+                    method="post"
+                    action="{{ url_for('social.delete_post',post_id=post.id) }}"
+                    data-confirm="Excluir este post e seus comentários?">
+                {{ csrf_field() }}
+                <button class="text-button muted">Excluir</button>
+              </form>
+            {% endif %}
+          </div>
+          <div class="comments">
+            {% for comment in post.comments %}
+              <div class="comment">
+                <a href="{{ url_for('perfil.public',username=comment.author.username) }}">{{ avatar(comment.author) }}</a>
+                <div>
+                  <a class="comment-author"
+                     href="{{ url_for('perfil.public',username=comment.author.username) }}">{{ comment.author.username }}</a>
+                  <p class="preserve-lines">{{ comment.text }}</p>
+                </div>
+              </div>
+            {% endfor %}
+            <form method="post"
+                  action="{{ url_for('social.comment',post_id=post.id) }}"
+                  class="comment-form">
+              {{ csrf_field() }}
+              <input id="comment-{{ post.id }}"
+                     name="text"
+                     maxlength="500"
+                     placeholder="Deixe um comentário…"
+                     aria-label="Comentar no post de {{ post.author.username }}"
+                     required>
+              <button class="icon-button" aria-label="Enviar comentário">{{ icon('arrow', 20) }}</button>
+            </form>
+          </div>
+        </article>
+      {% else %}
+        <section class="empty-state panel">
+          <span class="feature-icon">{{ icon('feed', 28) }}</span>
+          <h2>Sua comunidade começa aqui.</h2>
+          <p>Publique sua primeira novidade ou siga outros entusiastas para ver os posts deles.</p>
+          <a class="btn btn-secondary" href="{{ url_for('social.friends') }}">Encontrar pessoas {{ icon('arrow', 16) }}</a>
+        </section>
+      {% endfor %}
+      {% if page.pages > 1 %}
+        <nav class="pagination" aria-label="Páginas do feed">
+          {% if page.has_prev %}
+            <a class="btn btn-secondary"
+               href="{{ url_for('social.feed',page=page.prev_num) }}">Mais recentes</a>
+          {% endif %}
+          <span>{{ page.page }} / {{ page.pages }}</span>
+          {% if page.has_next %}
+            <a class="btn btn-secondary"
+               href="{{ url_for('social.feed',page=page.next_num) }}">Mais antigos</a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    </div>
+    <aside class="feed-aside">
+      <section class="panel mini-garage">
+        <span class="eyebrow">SEU ESPAÇO</span>
+        <h3>Minha garagem {{ icon('car', 20) }}</h3>
+        <div class="mini-stats">
+          <div>
+            <strong>{{ current_user.vehicles|length }}</strong><span>Projetos</span>
+          </div>
+          <div>
+            <strong>{{ following_count }}</strong><span>Seguindo</span>
+          </div>
+        </div>
+        {% for car in current_user.vehicles[:2] %}
+          <a class="mini-car"
+             href="{{ url_for('garagem.detail',vehicle_id=car.id) }}">
+            <img src="{{ url_for('uploaded_file',filename=car.photos[0].filename) if car.photos else url_for('static',filename='img/car.svg') }}"
+                 alt="{{ car.title }}">
+            <span><strong>{{ car.title }}</strong><small>{{ car.year }} · {{ car.color }}</small></span></a>
+        {% endfor %}
+        <a class="aside-link" href="{{ url_for('garagem.index') }}">Ver minha garagem {{ icon('arrow', 16) }}</a>
+      </section>
+      <section class="panel suggestions">
+        <h3>Conexões na pista</h3>
+        <p class="muted">Conheça outras garagens.</p>
+        {% for user in suggestions %}
+          <div class="suggestion">
+            <a class="account"
+               href="{{ url_for('perfil.public',username=user.username) }}">{{ avatar(user) }}<span><strong>{{ user.username }}</strong><small>{{ user.city or 'Entusiasta automotivo' }}</small></span></a>
+            <form method="post" action="{{ url_for('social.follow',user_id=user.id) }}">
+              {{ csrf_field() }}
+              <button class="icon-button orange" aria-label="Seguir {{ user.username }}">{{ icon('plus', 18) }}</button>
+            </form>
+          </div>
+        {% else %}
+          <p class="muted">Você já acompanha todos por aqui.</p>
+        {% endfor %}
+        <a class="aside-link" href="{{ url_for('social.friends') }}">Explorar comunidade {{ icon('arrow', 16) }}</a>
+      </section>
+      <div class="community-note">
+        <span class="eyebrow">GARAGE ETIQUETTE</span>
+        <p>
+          Respeite cada projeto.
+          <br>
+          A paixão é o que nos une.
+        </p>
+        <span>EST. 2026 / GARAGEHUB</span>
+      </div>
+    </aside>
+  </div>
+{% endblock %}

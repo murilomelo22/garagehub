@@ -1,0 +1,146 @@
+{% extends 'base.html' %}{% from 'macros.html' import csrf_field, icon %}
+{% block content %}
+  <a class="back-link"
+     href="{{ url_for('garagem.detail',vehicle_id=vehicle.id) }}">← {{ vehicle.title }}</a>
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">CADA ETAPA DO SEU PROJETO</span>
+      <h1>Performance & modificações</h1>
+      <p>{{ vehicle.title }} · {{ vehicle.year }}</p>
+    </div>
+  </div>
+  <div class="detail-layout">
+    <form method="post" class="panel form-panel form-stack">
+      {{ csrf_field() }}
+      <h2>Nova medição</h2>
+      <p class="muted">A potência é obrigatória. Preencha os outros dados que você mediu.</p>
+      <label>
+        Data
+        <input type="date"
+               name="date"
+               value="{{ request.form.get('date',today) }}"
+               min="1900-01-01"
+               max="{{ today }}"
+               required>
+      </label>
+      <div class="form-grid">
+        {% for key,label,minimum,maximum,required in [('power','Potência (cv)',1,10000,true),('torque','Torque (Nm)',1,20000,false),('zero_to_hundred','0–100 km/h (s)',0.1,120,false),('top_speed','Vel. máxima (km/h)',1,1000,false),('consumption','Consumo (km/l)',0.1,100,false)] %}
+          <label>
+            {{ label }}{{ ' *' if required }}<input type="number"
+       name="{{ key }}"
+       min="{{ minimum }}"
+       max="{{ maximum }}"
+       step="any"
+       value="{{ request.form.get(key,'') }}"
+       {{ 'required' if required }}>
+          </label>
+        {% endfor %}
+      </div>
+      <button class="btn btn-primary">{{ icon('plus', 18) }} Registrar medição</button>
+    </form>
+    <form method="post"
+          action="{{ url_for('estatisticas.add_modification',vehicle_id=vehicle.id) }}"
+          class="panel form-panel form-stack">
+      {{ csrf_field() }}
+      <h2>Nova modificação</h2>
+      <label>
+        Nome
+        <input name="name" maxlength="100" placeholder="Ex.: Remap stage 1" required>
+      </label>
+      <label>
+        Categoria
+        <select name="category" required>
+          <option value="Motor">Motor</option>
+          <option value="Suspensão">Suspensão</option>
+          <option value="Rodas e pneus">Rodas e pneus</option>
+          <option value="Escape">Escape</option>
+          <option value="Estética">Estética</option>
+          <option value="Interior">Interior</option>
+          <option value="Freios">Freios</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </label>
+      <label>
+        Data
+        <input type="date"
+               name="date"
+               min="1900-01-01"
+               max="{{ today }}"
+               value="{{ today }}"
+               required>
+      </label>
+      <label>
+        Valor (R$)
+        <input type="number"
+               name="value"
+               min="0"
+               max="9999999999.99"
+               step="0.01"
+               placeholder="0,00"
+               required>
+      </label>
+      <button class="btn btn-primary">{{ icon('plus', 18) }} Adicionar modificação</button>
+    </form>
+  </div>
+  <section class="panel form-panel">
+    <h2>Histórico de medições</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Potência</th>
+            <th>Torque</th>
+            <th>0–100</th>
+            <th>Máxima</th>
+            <th>Consumo</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in vehicle.stats %}
+            <tr>
+              <td>{{ item.date.strftime("%d/%m/%Y") }}</td>
+              {% for key,unit in [('power','cv'),('torque','Nm'),('zero_to_hundred','s'),('top_speed','km/h'),('consumption','km/l')] %}
+                <td>{{ ('%g'|format(item[key]) ) ~ ' ' ~ unit if item[key] is not none else '—' }}</td>
+              {% endfor %}
+              <td>
+                <form method="post"
+                      action="{{ url_for('estatisticas.delete_item',vehicle_id=vehicle.id,kind='medicoes',item_id=item.id) }}"
+                      data-confirm="Remover esta medição?">
+                  {{ csrf_field() }}
+                  <button class="text-button orange">Remover</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7">Nenhuma medição registrada.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="panel form-panel">
+    <h2>Modificações do projeto</h2>
+    {% for item in vehicle.modifications %}
+      <div class="friend-row">
+        <div>
+          <strong>{{ item.name }}</strong>
+          <p class="muted">
+            {{ item.category }} · {{ item.date.strftime("%d/%m/%Y") }} · R$ {{ '%.2f'|format(item.value) |replace('.',',') }}
+          </p>
+        </div>
+        <form method="post"
+              action="{{ url_for('estatisticas.delete_item',vehicle_id=vehicle.id,kind='modificacoes',item_id=item.id) }}"
+              data-confirm="Remover esta modificação?">
+          {{ csrf_field() }}
+          <button class="text-button orange">Remover</button>
+        </form>
+      </div>
+    {% else %}
+      <p class="muted">Nenhuma modificação cadastrada.</p>
+    {% endfor %}
+  </section>
+{% endblock %}

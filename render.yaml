@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: garagehub
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GARAGEHUB_ENV
+        value: production
+      - key: GARAGEHUB_TRUST_PROXY
+        value: "1"
+      - key: GARAGEHUB_DATA_DIR
+        value: /var/data/garagehub
+    disk:
+      name: garagehub-data
+      mountPath: /var/data
+      sizeGB: 1

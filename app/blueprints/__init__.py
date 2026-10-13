@@ -1,0 +1,1 @@
+"""Módulos independentes da GarageHub."""

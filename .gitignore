@@ -1,0 +1,10 @@
+.venv/
+instance/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+.env.*
+!.env.example
+test-results/
+tela-inicial.png

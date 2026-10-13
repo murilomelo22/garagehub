@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% from 'macros.html' import icon %}
+{% block content %}
+  <section class="empty-state panel">
+    <span class="feature-icon">{{ icon('car', 32) }}</span>
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    <a class="btn btn-primary" href="{{ url_for('index') }}">Voltar ao início {{ icon('arrow', 18) }}</a>
+  </section>
+{% endblock %}

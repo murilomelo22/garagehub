@@ -1,0 +1,79 @@
+{% extends 'base.html' %}{% from 'macros.html' import csrf_field, icon %}
+{% block content %}
+  <div class="auth-layout">
+    <section class="auth-story">
+      <span class="eyebrow">BEM-VINDO À GARAGEHUB</span>
+      <h1>
+        Tem coisas que
+        <br>
+        só quem ama
+        <br>
+        <em>carros entende.</em>
+      </h1>
+      <p>Aqui, a conversa sempre começa pela garagem.</p>
+      <img src="{{ url_for('static', filename='img/car.svg') }}"
+           alt="Carro esportivo ilustrado">
+      <span class="auth-story-label">DRIVEN BY PASSION.</span>
+    </section>
+    <section class="panel auth-panel">
+      <span class="eyebrow">{{ 'SEU PRIMEIRO PASSO' if mode == 'register' else 'DE VOLTA À GARAGEM' }}</span>
+      <h2>{{ title }}</h2>
+      <p class="muted">
+        {{ 'Crie sua conta e dê partida no seu próximo projeto.' if mode == 'register' else 'Entre para acompanhar sua comunidade.' }}
+      </p>
+      <form method="post" class="form-stack">
+        {{ csrf_field() }}
+        {% if mode == 'register' %}
+          <label>
+            Nome de usuário
+            <input name="username"
+                   minlength="3"
+                   maxlength="30"
+                   pattern="[a-zA-Z0-9_]{3,30}"
+                   value="{{ request.form.get('username', '') }}"
+                   placeholder="seu_usuario"
+                   autocomplete="username"
+                   required>
+            <small>3–30 letras, números ou underscores.</small>
+          </label>
+          <label>
+            E-mail
+            <input type="email"
+                   name="email"
+                   maxlength="254"
+                   value="{{ request.form.get('email', '') }}"
+                   placeholder="voce@exemplo.com"
+                   autocomplete="email"
+                   required>
+          </label>
+        {% else %}
+          <label>
+            Usuário ou e-mail
+            <input name="identity"
+                   maxlength="254"
+                   value="{{ request.form.get('identity', '') }}"
+                   placeholder="Seu usuário ou e-mail"
+                   autocomplete="username"
+                   required>
+          </label>
+        {% endif %}
+        <label>
+          Senha
+          <input type="password"
+                 name="password"
+                 minlength="{{ 8 if mode == 'register' else 1 }}"
+                 maxlength="128"
+                 autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}"
+                 placeholder="{{ 'Pelo menos 8 caracteres' if mode == 'register' else 'Sua senha' }}"
+                 required>
+        </label>
+        <button class="btn btn-primary full">
+          {{ 'Criar minha conta' if mode == 'register' else 'Entrar na GarageHub' }} {{ icon('arrow', 18) }}
+        </button>
+      </form>
+      <p class="auth-switch">
+        {{ 'Já tem uma conta?' if mode == 'register' else 'Ainda não tem conta?' }} <a href="{{ url_for('auth.login') if mode == 'register' else url_for('auth.register') }}">{{ 'Entrar' if mode == 'register' else 'Cadastre-se' }}</a>
+      </p>
+    </section>
+  </div>
+{% endblock %}

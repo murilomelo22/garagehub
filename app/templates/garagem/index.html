@@ -1,0 +1,42 @@
+{% extends 'base.html' %}{% from 'macros.html' import icon, car_card %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">SEUS CARROS. SUAS HISTÓRIAS.</span>
+      <h1>
+        Minha garagem<span class="count-badge">{{ vehicles|length }}</span>
+      </h1>
+      <p>Cada detalhe faz parte do seu projeto.</p>
+    </div>
+    <a class="btn btn-primary" href="{{ url_for('garagem.create') }}">{{ icon('plus', 18) }} Adicionar veículo</a>
+  </div>
+  <section class="garage-banner">
+    <div>
+      <span class="eyebrow">BUILT, NOT BOUGHT.</span>
+      <h2>
+        O próximo capítulo
+        <br>
+        começa na sua garagem.
+      </h2>
+      <p>Acompanhe a evolução. Compartilhe a paixão.</p>
+    </div>
+    <img src="{{ url_for('static', filename='img/car.svg') }}"
+         alt="Ilustração de um carro">
+  </section>
+  <div class="section-heading">
+    <h2>Meus projetos</h2>
+    <span class="muted">{{ vehicles|length }} veículos na garagem</span>
+  </div>
+  <div class="car-grid">
+    {% for car in vehicles %}
+      {{ car_card(car) }}
+    {% else %}
+      <section class="empty-state panel">
+        <span class="feature-icon">{{ icon('car', 32) }}</span>
+        <h2>Sua história começa aqui.</h2>
+        <p>Adicione seu primeiro carro, mesmo se o projeto ainda estiver no papel.</p>
+        <a class="btn btn-primary" href="{{ url_for('garagem.create') }}">{{ icon('plus', 18) }} Adicionar meu primeiro veículo</a>
+      </section>
+    {% endfor %}
+  </div>
+{% endblock %}

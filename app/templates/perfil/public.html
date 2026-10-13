@@ -1,0 +1,54 @@
+{% extends 'base.html' %}{% from 'macros.html' import avatar, icon, car_card, csrf_field, friendship_actions with context %}
+{% block content %}
+  <section class="profile-banner">
+    <span class="eyebrow">MEMBRO DA COMUNIDADE</span>
+    <div class="profile-stripes"></div>
+  </section>
+  <section class="profile-heading">
+    <div class="profile-identity">
+      {{ avatar(user,true) }}
+      <div>
+        <h1>{{ user.username }}</h1>
+        <p class="muted">
+          {{ icon('pin', 16) }} {{ user.city or 'Cidade não informada' }} <span>·</span> Membro desde {{ user.created_at.strftime("%m/%Y") }}
+        </p>
+      </div>
+    </div>
+    <div class="actions">
+      {% if current_user.is_authenticated and current_user.id == user.id %}
+        <a class="btn btn-secondary" href="{{ url_for('perfil.edit') }}">{{ icon('edit', 16) }} Editar perfil</a>
+      {% elif current_user.is_authenticated %}
+        <form method="post"
+              action="{{ url_for('social.follow', user_id=user.id) }}">
+          {{ csrf_field() }}
+          <button class="btn btn-primary">{{ 'Deixar de seguir' if following else 'Seguir' }}</button>
+        </form>
+        {{ friendship_actions(user, friendship) }}
+      {% else %}
+        <a class="btn btn-primary" href="{{ url_for('auth.login') }}">Entre para conectar</a>
+      {% endif %}
+    </div>
+  </section>
+  <div class="profile-about">
+    <p class="preserve-lines">{{ user.bio or 'Uma paixão por carros e muitas histórias pela frente.' }}</p>
+    <div class="profile-counts">
+      <span><strong>{{ user.vehicles|length }}</strong> veículos</span><span><strong>{{ followers }}</strong> seguidores</span>
+    </div>
+  </div>
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">PROJETOS & HISTÓRIAS</span>
+      <h2>Garagem de {{ user.username }}</h2>
+    </div>
+  </div>
+  <div class="car-grid">
+    {% for car in user.vehicles %}
+      {{ car_card(car) }}
+    {% else %}
+      <div class="empty-state panel">
+        <h3>Um novo projeto está a caminho.</h3>
+        <p>Este usuário ainda não adicionou veículos.</p>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

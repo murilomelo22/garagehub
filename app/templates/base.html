@@ -1,0 +1,93 @@
+{% from 'macros.html' import icon, avatar, csrf_field %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#101114">
+    <meta name="description"
+          content="GarageHub: uma comunidade para quem vive a paixão por carros.">
+    <title>{{ title }} · GarageHub</title>
+    <link rel="icon"
+          href="{{ url_for('static', filename='img/favicon.svg') }}"
+          type="image/svg+xml">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('car', 24) }}</span>Garage<span>Hub</span><small>0.0</small></a>
+      <div class="sidebar-label">SUA COMUNIDADE AUTOMOTIVA</div>
+      <nav aria-label="Navegação principal">
+        {% set endpoint = request.endpoint or '' %}
+        <a class="nav-item {{ 'active' if endpoint.startswith("social.feed") }}"
+           href="{{ url_for('social.feed') }}">{{ icon("feed") }}<span>Feed</span></a>
+        <a class="nav-item {{ 'active' if endpoint.startswith("garagem.") or endpoint.startswith('estatisticas.') }}"
+           href="{{ url_for('garagem.index') }}">{{ icon("car") }}<span>Minha garagem</span></a>
+        <a class="nav-item {{ 'active' if endpoint.startswith("social.friends") }}"
+           href="{{ url_for('social.friends') }}">{{ icon("users") }}<span>Amigos</span></a>
+        <a class="nav-item {{ 'active' if endpoint.startswith("perfil.") }}"
+           href="{{ url_for('perfil.public', username=current_user.username) if current_user.is_authenticated else url_for('auth.login') }}">{{ icon("user") }}<span>Perfil</span></a>
+      </nav>
+      <div class="sidebar-note">
+        <span class="orange">FEITO PARA ENTUSIASTAS</span>
+        <p>
+          Mais que carros.
+          <br>
+          Histórias que conectam.
+        </p>
+        <div class="note-lines"></div>
+      </div>
+      <div class="sidebar-bottom">
+        {% if current_user.is_authenticated %}
+          <a class="account"
+             href="{{ url_for('perfil.public', username=current_user.username) }}">{{ avatar(current_user) }}<span><strong>{{ current_user.username }}</strong><small>Minha conta</small></span></a>
+          <form method="post" action="{{ url_for('auth.logout') }}">
+            {{ csrf_field() }}
+            <button class="icon-button" aria-label="Sair">{{ icon('logout', 18) }}</button>
+          </form>
+        {% else %}
+          <a class="btn btn-secondary full" href="{{ url_for('auth.login') }}">Entre na comunidade {{ icon('arrow', 16) }}</a>
+        {% endif %}
+      </div>
+    </aside>
+    <div class="app-shell">
+      <header class="topbar">
+        <span class="topbar-title">Sua paixão. Sua comunidade.</span>
+        <form class="header-search"
+              action="{{ url_for('social.friends') }}"
+              method="get">
+          {{ icon('search', 18) }}
+          <input type="search"
+                 name="q"
+                 placeholder="Busque pessoas, carros, cidades…"
+                 aria-label="Buscar na comunidade">
+        </form>
+        {% if current_user.is_authenticated %}
+          <a class="header-avatar"
+             href="{{ url_for('perfil.public', username=current_user.username) }}">{{ avatar(current_user) }}</a>
+        {% else %}
+          <a class="btn btn-quiet btn-small" href="{{ url_for('auth.login') }}">Entrar {{ icon('arrow', 16) }}</a>
+        {% endif %}
+      </header>
+      <main id="main" class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}" role="status">
+              <span>{{ message }}</span>
+              <button type="button" aria-label="Fechar mensagem" data-dismiss>×</button>
+            </div>
+          {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+      <footer class="footer">
+        <span>GARAGEHUB <b>© 2026</b></span><span>Uma nova casa para sua paixão. <span class="orange">V0.0</span></span>
+      </footer>
+    </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

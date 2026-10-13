@@ -1,0 +1,89 @@
+{% extends 'base.html' %}{% from 'macros.html' import avatar, csrf_field, icon, friendship_actions with context %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">A MESMA PAIXÃO, NOVAS CONEXÕES</span>
+      <h1>Amigos & comunidade</h1>
+      <p>Encontre pessoas que entendem seu projeto.</p>
+    </div>
+  </div>
+  <section class="panel friends-panel">
+    <h2>Meus amigos</h2>
+    <div class="friends-list">
+      {% for id, link in friendships.items() if link.status == 'accepted' %}
+        {% set user = users_by_id[id] %}
+        <div class="friend-row">
+          <a class="account"
+             href="{{ url_for('perfil.public',username=user.username) }}">{{ avatar(user) }}<span><strong>{{ user.username }}</strong><small>{{ user.city or 'Entusiasta' }}</small></span></a>{{ friendship_actions(user,link) }}
+        </div>
+      {% else %}
+        <p class="muted">Você ainda não tem amizades aceitas. Conheça a comunidade abaixo!</p>
+      {% endfor %}
+    </div>
+    <h3 class="subheading">Pedidos de amizade</h3>
+    {% for id, link in friendships.items() if link.status == 'pending' %}
+      {% set user = users_by_id[id] %}
+      <div class="friend-row">
+        <a class="account"
+           href="{{ url_for('perfil.public',username=user.username) }}">{{ avatar(user) }}<span><strong>{{ user.username }}</strong><small>{{ 'Pedido enviado' if link.requester_id == current_user.id else 'Quer ser seu amigo' }}</small></span></a>
+        <div class="actions">{{ friendship_actions(user,link) }}</div>
+      </div>
+    {% else %}
+      <p class="muted">Nenhum pedido pendente.</p>
+    {% endfor %}
+  </section>
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">EXPLORE NOVAS GARAGENS</span>
+      <h2>Encontre sua galera</h2>
+    </div>
+  </div>
+  <form class="community-search" method="get">
+    {{ icon('search', 20) }}
+    <input name="q"
+           type="search"
+           value="{{ q }}"
+           maxlength="100"
+           placeholder="Nome, cidade, marca ou modelo de carro"
+           aria-label="Buscar usuários">
+    <button class="btn btn-primary">Buscar</button>
+  </form>
+  <div class="people-grid">
+    {% for user in page.items %}
+      <article class="panel person-card"><a href="{{ url_for('perfil.public',username=user.username) }}">{{ avatar(user,true) }}
+        <h3>{{ user.username }}</h3>
+      </a>
+      <p class="muted">{{ icon('pin', 14) }} {{ user.city or 'Cidade não informada' }}</p>
+      <p class="person-bio">{{ user.bio[:110] or 'Uma garagem, muitas histórias.' }}</p>
+      <span class="tag">{{ user.vehicles|length }} veículos</span>
+      <div class="person-actions">
+        <form method="post" action="{{ url_for('social.follow',user_id=user.id) }}">
+          {{ csrf_field() }}
+          <button class="btn {{ 'btn-secondary' if user.id in following_ids else 'btn-primary' }} btn-small">
+            {{ 'Deixar de seguir' if user.id in following_ids else 'Seguir' }}
+          </button>
+        </form>
+        {{ friendship_actions(user,friendships.get(user.id) ) }}
+      </div>
+    </article>
+  {% else %}
+    <section class="empty-state panel">
+      <h3>Nenhuma garagem encontrada.</h3>
+      <p>Tente outro nome, cidade, marca ou modelo.</p>
+    </section>
+  {% endfor %}
+</div>
+{% if page.pages > 1 %}
+  <nav class="pagination" aria-label="Páginas da comunidade">
+    {% if page.has_prev %}
+      <a class="btn btn-secondary"
+         href="{{ url_for('social.friends',q=q,page=page.prev_num) }}">Anterior</a>
+    {% endif %}
+    <span>{{ page.page }} / {{ page.pages }}</span>
+    {% if page.has_next %}
+      <a class="btn btn-secondary"
+         href="{{ url_for('social.friends',q=q,page=page.next_num) }}">Próxima</a>
+    {% endif %}
+  </nav>
+{% endif %}
+{% endblock %}

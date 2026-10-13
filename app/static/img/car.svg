@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="440" viewBox="0 0 900 440" role="img" aria-label="Ilustração de um esportivo vermelho genérico">
+<defs><linearGradient id="body" x1="0" y1="0" x2=".5" y2="1"><stop stop-color="#ff7759"/><stop offset=".36" stop-color="#db3826"/><stop offset="1" stop-color="#651c1d"/></linearGradient><linearGradient id="hood" x2=".1" y2="1"><stop stop-color="#ff8a69"/><stop offset="1" stop-color="#a92b25"/></linearGradient><linearGradient id="glass" x2="1" y2="1"><stop stop-color="#72777f"/><stop offset=".4" stop-color="#303741"/><stop offset="1" stop-color="#15171e"/></linearGradient><linearGradient id="side" x2="0" y2="1"><stop stop-color="#d14736"/><stop offset="1" stop-color="#461b1d"/></linearGradient><radialGradient id="wheel"><stop stop-color="#94979c"/><stop offset=".5" stop-color="#292b33"/><stop offset=".72" stop-color="#58595f"/><stop offset=".75" stop-color="#0c0d11"/><stop offset="1" stop-color="#151519"/></radialGradient><filter id="shadow"><feGaussianBlur stdDeviation="12"/></filter></defs>
+<ellipse cx="457" cy="364" rx="335" ry="24" fill="#08080b" opacity=".7" filter="url(#shadow)"/>
+<path d="m100 292 34-66 104-24 86-69 139-12 115 20 105 75 90 24 21 48-25 38-80 25H196l-96-19Z" fill="url(#body)" stroke="#a63c30" stroke-width="2"/>
+<path d="m238 202 94-59 128-11 108 18 95 62-119 21-171-9Z" fill="url(#glass)" stroke="#ad4f3e" stroke-width="6"/>
+<path d="m377 142-8 74m90-82 83 95" stroke="#ce4c39" stroke-width="9"/>
+<path d="m541 234 117-23 116 34-129 54-185-2Z" fill="url(#hood)"/>
+<path d="m105 266 148-35 289 3-83 62-232 41-122-27Z" fill="url(#side)"/>
+<path d="m251 239 13 75m152-76 20 65" stroke="#782626" stroke-width="2"/><path d="m115 260 137-33 287 7m18 11 80 24 101-26" fill="none" stroke="#fa8a6d" stroke-width="2" opacity=".55"/>
+<path d="m122 311 87 24 277-22 26 22-292 19-110-26Zm337-15 176 1 139-52 20 44-31 37-95 18-155-10Z" fill="#401c20"/>
+<path d="m513 306 124 6 131-45-15 44-88 25-153-11Z" fill="#15161a" stroke="#622f2d" stroke-width="2"/>
+<path d="m529 314 104 6 116-39m-220 43 104 6 106-35" fill="none" stroke="#47414a" stroke-width="2"/>
+<path d="m475 286 77-5 60 7-9 15-113-2Z" fill="#e4e5da"/><path d="m648 277 116-34 5 17-113 37Z" fill="#e9e7db"/><path d="m488 290 104 5m70-13 96-32" fill="none" stroke="#fff9e4" stroke-width="4"/>
+<path d="m540 229 3-11 20-2 17 9-8 11Z" fill="#cf4b37" stroke="#fd8964" stroke-width="2"/><path d="m111 250 27-21-2 37-25 10Z" fill="#f07644"/>
+<ellipse cx="233" cy="313" rx="44" ry="55" fill="#090b0e"/><ellipse cx="233" cy="317" rx="37" ry="47" fill="url(#wheel)" stroke="#22232a" stroke-width="2"/><ellipse cx="233" cy="317" rx="25" ry="34" fill="#1d1f25" stroke="#92949b" stroke-width="3"/>
+<path d="m233 285 0 64m-22-49 44 34m-44 0 44-34m-45 17h45" stroke="#85888f" stroke-width="5"/><ellipse cx="233" cy="317" rx="7" ry="9" fill="#d2d4d8"/>
+<ellipse cx="663" cy="319" rx="49" ry="61" fill="#080a0d"/><ellipse cx="663" cy="324" rx="42" ry="53" fill="url(#wheel)" stroke="#22232a" stroke-width="2"/><ellipse cx="663" cy="324" rx="29" ry="39" fill="#1d1f25" stroke="#b2b4ba" stroke-width="3"/>
+<path d="m663 287 0 74m-25-57 50 40m-50 0 50-40m-53 20h54" stroke="#92959f" stroke-width="5"/><ellipse cx="663" cy="324" rx="8" ry="10" fill="#d8dadd"/>
+<path d="m191 276 8-13 19-10 23-5 25 7 15 15m331 20 8-15 27-16 23-3 27 8 18 21" fill="none" stroke="#ef6550" stroke-width="3"/>
+<path d="m300 240 14 0m116 4 12 0" stroke="#f3997b" stroke-width="4" stroke-linecap="round"/>
+<path d="m120 325 69 23m310-6 106 9m126-9 40-12" stroke="#101217" stroke-width="7"/>
+<text x="635" y="329" font-family="Arial,sans-serif" font-size="10" font-weight="bold" fill="#8f929b" text-anchor="middle">GH</text>
+</svg>

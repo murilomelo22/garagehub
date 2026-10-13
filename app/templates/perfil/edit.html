@@ -1,0 +1,42 @@
+{% extends 'base.html' %}{% from 'macros.html' import csrf_field, avatar, icon %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">DO SEU JEITO</span>
+      <h1>Editar perfil</h1>
+      <p>Conte um pouco sobre quem está atrás do volante.</p>
+    </div>
+  </div>
+  <form method="post"
+        enctype="multipart/form-data"
+        class="panel form-panel form-stack narrow">
+    {{ csrf_field() }}
+    <div class="profile-identity">
+      {{ avatar(current_user,true) }}
+      <div>
+        <h3>{{ current_user.username }}</h3>
+        <span class="muted">Sua identidade na comunidade</span>
+      </div>
+    </div>
+    <label>
+      Foto de perfil
+      <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+      <small>JPG, PNG ou WebP, até 6 MB.</small>
+    </label>
+    <label>
+      Cidade
+      <input name="city"
+             maxlength="80"
+             value="{{ request.form.get('city',current_user.city) }}"
+             placeholder="Ex.: São Paulo, SP">
+    </label>
+    <label>
+      Bio<textarea name="bio" maxlength="500" rows="5" placeholder="Seus carros, suas paixões, sua história…">{{ request.form.get('bio',current_user.bio) }}</textarea>
+    </label>
+    <div class="actions">
+      <button class="btn btn-primary">Salvar perfil {{ icon('check', 18) }}</button>
+      <a class="btn btn-quiet"
+         href="{{ url_for('perfil.public', username=current_user.username) }}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

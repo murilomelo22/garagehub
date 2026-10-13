@@ -1,0 +1,45 @@
+{% extends 'base.html' %}{% from 'macros.html' import icon %}
+{% block content %}
+  <section class="hero landing-hero">
+    <div class="hero-copy">
+      <span class="eyebrow">A COMUNIDADE DE QUEM VIVE CARROS</span>
+      <h1>
+        Sua paixão merece
+        <br>
+        uma <em>garagem.</em>
+      </h1>
+      <p>
+        Cada carro tem uma história. Compartilhe a sua, acompanhe seus projetos e conecte-se com quem fala a mesma língua.
+      </p>
+      <div class="actions">
+        <a class="btn btn-primary" href="{{ url_for('auth.register') }}">Começar minha garagem {{ icon("arrow") }}</a><a class="btn btn-secondary" href="{{ url_for('auth.login') }}">Já tenho conta</a>
+      </div>
+      <div class="hero-caption">
+        <span class="status-dot"></span> Feito para quem gosta de ir além do original.
+      </div>
+    </div>
+    <img class="hero-car"
+         src="{{ url_for('static', filename='img/car.svg') }}"
+         alt="Ilustração de um carro esportivo vermelho">
+    <span class="hero-number">01 / GARAGE CULTURE</span>
+  </section>
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">DE ENTUSIASTA PARA ENTUSIASTA</span>
+      <h2>Todo projeto começa com uma ideia.</h2>
+    </div>
+    <span class="muted">A próxima pode ser a sua.</span>
+  </div>
+  <div class="feature-grid">
+  <article class="panel feature-card"><span class="feature-icon">{{ icon('car', 26) }}</span><span class="feature-index">01</span>
+  <h3>Sua garagem digital</h3>
+  <p>Carros, fotos e cada detalhe dos seus projetos em um só lugar.</p>
+</article><article class="panel feature-card"><span class="feature-icon">{{ icon('bolt', 26) }}</span><span class="feature-index">02</span>
+<h3>Evolução de verdade</h3>
+<p>Registre potência, medições e modificações. Veja até onde você chegou.</p>
+</article><article class="panel feature-card"><span class="feature-icon">{{ icon('cube', 26) }}</span><span class="feature-index">03</span>
+<h3>Imagine em 3D</h3>
+<p>Experimente cores, rodas, suspensão e spoiler em um modelo genérico.</p>
+</article>
+</div>
+{% endblock %}

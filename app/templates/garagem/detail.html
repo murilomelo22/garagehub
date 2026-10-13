@@ -1,0 +1,214 @@
+{% extends 'base.html' %}{% from 'macros.html' import csrf_field, icon, avatar %}
+{% set is_owner = current_user.is_authenticated and current_user.id == vehicle.user_id %}
+{% block content %}
+  <a class="back-link"
+     href="{{ url_for('perfil.public',username=vehicle.owner.username) }}">← Garagem de {{ vehicle.owner.username }}</a>
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">{{ vehicle.brand }} / {{ vehicle.year }}</span>
+      <h1>{{ vehicle.model }}</h1>
+      <p>
+        {{ vehicle.engine or 'Motor não informado' }} · {{ vehicle.transmission or 'Câmbio não informado' }} · {{ vehicle.color }}
+      </p>
+    </div>
+    {% if is_owner %}
+      <div class="actions">
+        <a class="btn btn-secondary"
+           href="{{ url_for('garagem.edit',vehicle_id=vehicle.id) }}">{{ icon('edit', 16) }} Editar carro</a><a class="btn btn-primary"
+   href="{{ url_for('estatisticas.edit',vehicle_id=vehicle.id) }}">{{ icon('bolt', 16) }} Registrar evolução</a>
+      </div>
+    {% endif %}
+  </div>
+  <div class="detail-layout">
+    <section class="panel car-gallery">
+      <img id="gallery-main"
+           src="{{ url_for('uploaded_file',filename=vehicle.photos[0].filename) if vehicle.photos else url_for('static',filename='img/car.svg') }}"
+           alt="{{ vehicle.title }}">
+      <div class="gallery-thumbs">
+        {% for photo in vehicle.photos %}
+          <button type="button"
+                  data-gallery-src="{{ url_for('uploaded_file',filename=photo.filename) }}"
+                  aria-label="Ver foto {{ loop.index }} de {{ vehicle.title }}">
+            <img src="{{ url_for('uploaded_file',filename=photo.filename) }}"
+                 alt="Foto {{ loop.index }}">
+          </button>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="panel project-story">
+      <span class="eyebrow">POR TRÁS DO PROJETO</span>
+      <h2>A história do carro</h2>
+      <p class="preserve-lines">{{ vehicle.description or 'Toda garagem tem uma história. A deste projeto ainda está sendo escrita.' }}</p>
+      <a class="account"
+         href="{{ url_for('perfil.public',username=vehicle.owner.username) }}">{{ avatar(vehicle.owner) }}<span><strong>{{ vehicle.owner.username }}</strong><small>{{ vehicle.owner.city or 'Dono do projeto' }}</small></span></a>
+    </section>
+  </div>
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow">NÚMEROS QUE CONTAM HISTÓRIAS</span>
+      <h2>Performance</h2>
+    </div>
+    <span class="muted">{{ 'Última medição: ' ~ vehicle.latest_stats.date.strftime("%d/%m/%Y") if vehicle.latest_stats else 'Nenhuma medição registrada' }}</span>
+  </div>
+  <div class="stats-grid">
+    {% set latest = vehicle.latest_stats %}
+    {% for key,label,unit in [('power','Potência','cv'),('torque','Torque','Nm'),('zero_to_hundred','0–100 km/h','s'),('top_speed','Vel. máxima','km/h'),('consumption','Consumo','km/l')] %}
+      <article class="panel stat-card"><span>{{ label }}</span><strong>{{ '%g'|format(latest[key]) if latest and latest[key] is not none else '—' }}<small>{{ unit }}</small></strong></article>
+    {% endfor %}
+  </div>
+  <div class="detail-layout">
+    <section class="panel chart-panel">
+      <h3>
+        Evolução de potência <span class="tag">CV</span>
+      </h3>
+      {% if vehicle.stats %}
+        <div class="chart-container">
+          <canvas id="power-chart"
+                  aria-label="Gráfico de evolução de potência"
+                  role="img"></canvas>
+        </div>
+        <p class="muted chart-fallback" hidden>
+          O gráfico depende da CDN. O histórico completo está disponível abaixo.
+        </p>
+        <details class="history">
+          <summary>Ver histórico de medições</summary>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>cv</th>
+                  <th>Nm</th>
+                  <th>0–100 s</th>
+                  <th>km/h</th>
+                  <th>km/l</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for stats in vehicle.stats %}
+                  <tr>
+                    <td>{{ stats.date.strftime("%d/%m/%Y") }}</td>
+                    {% for key in ['power','torque','zero_to_hundred','top_speed','consumption'] %}
+                      <td>{{ '%g'|format(stats[key]) if stats[key] is not none else '—' }}</td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% else %}
+        <div class="empty-state compact">
+          <p>Registre a primeira medição para começar o gráfico.</p>
+        </div>
+      {% endif %}
+    </section>
+    <section class="panel modifications-panel">
+      <h3>
+        Modificações <span class="count-badge">{{ vehicle.modifications|length }}</span>
+      </h3>
+      {% for modification in vehicle.modifications %}
+        <div class="modification">
+          <span class="feature-icon small">{{ icon('bolt', 16) }}</span>
+          <div>
+            <strong>{{ modification.name }}</strong><small>{{ modification.category }} · {{ modification.date.strftime("%d/%m/%Y") }}</small>
+          </div>
+          <span class="mod-price">R$ {{ '%.2f'|format(modification.value) |replace('.',',') }}</span>
+        </div>
+      {% else %}
+        <p class="muted">Original por enquanto. Cada mudança tem sua história.</p>
+      {% endfor %}
+    </section>
+  </div>
+  <section id="visualizador" class="panel viewer-section">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow">IMAGINE O PRÓXIMO PASSO</span>
+        <h2>
+          {{ icon('cube', 23) }} Garage Studio <span class="tag">3D</span>
+        </h2>
+      </div>
+      <span class="muted">Modelo genérico · arraste para girar</span>
+    </div>
+    <div class="viewer-layout">
+      <div id="car-viewer" aria-label="Visualizador 3D de carro genérico">
+        <div class="viewer-message" id="viewer-message">Preparando sua garagem 3D…</div>
+        <span class="viewer-caption">ORBIT / ZOOM / EXPLORE</span>
+      </div>
+      <form method="post"
+            action="{{ url_for('visualizador.save',vehicle_id=vehicle.id) }}"
+            id="viewer-form"
+            class="viewer-controls">
+        {{ csrf_field() }}
+        <label>
+          Pintura<input type="color"
+       name="paint_color"
+       value="{{ viewer_config.paint_color }}"
+       {{ 'disabled' if not is_owner }}>
+        </label>
+        <label>
+          Cor das rodas<input type="color"
+       name="wheel_color"
+       value="{{ viewer_config.wheel_color }}"
+       {{ 'disabled' if not is_owner }}>
+        </label>
+        <label>
+          Tamanho das rodas <output id="wheel-size-value">{{ viewer_config.wheel_size }}</output><input type="range"
+       name="wheel_size"
+       min="0.8"
+       max="1.3"
+       step="0.05"
+       value="{{ viewer_config.wheel_size }}"
+       {{ 'disabled' if not is_owner }}>
+        </label>
+        <label>
+          Suspensão<select name="suspension" {{ 'disabled' if not is_owner }}><option value="original"
+        {{ 'selected' if viewer_config.suspension == 'original' }}>Original
+        </option>
+        <option value="lowered"
+                {{ 'selected' if viewer_config.suspension == 'lowered' }}>Rebaixado
+        </option>
+      </select>
+    </label>
+    <label>
+      Spoiler<select name="spoiler" {{ 'disabled' if not is_owner }}><option value="no" {{ 'selected' if not viewer_config.spoiler }}>Sem spoiler
+    </option>
+    <option value="yes" {{ 'selected' if viewer_config.spoiler }}>Com spoiler
+    </option>
+  </select>
+</label>
+{% if is_owner %}
+  <button class="btn btn-primary full" id="save-viewer">Salvar visual {{ icon('check', 16) }}</button>
+{% else %}
+  <p class="muted">Visual criado por {{ vehicle.owner.username }}.</p>
+{% endif %}
+<p id="viewer-feedback" aria-live="polite"></p>
+<small>Uma representação conceitual, sem correspondência com modelos de marcas reais.</small>
+</form>
+</div>
+</section>
+{% if is_owner %}
+  <form class="danger-zone"
+        method="post"
+        action="{{ url_for('garagem.delete',vehicle_id=vehicle.id) }}"
+        data-confirm="Excluir este veículo, fotos, medições e modificações? Esta ação não pode ser desfeita.">
+    {{ csrf_field() }}
+    <button class="btn btn-danger btn-small">Excluir veículo</button>
+  </form>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+  <script id="power-data" type="application/json">{{ chart|tojson }}</script>
+  <script id="viewer-config" type="application/json">{{ viewer_config|tojson }}</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer></script>
+  <script src="{{ url_for('static',filename='js/chart.js') }}" defer></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="{{ url_for('static',filename='js/viewer.js') }}"></script>
+{% endblock %}
