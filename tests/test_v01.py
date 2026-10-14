@@ -38,6 +38,7 @@ def test_demo_has_varied_coherent_measurements_and_interactions(app):
         posts = db.session.scalars(db.select(Post)).all()
         assert len({item.created_at for item in posts}) == len(posts)
         assert {len(item.comments) for item in posts} == {1,2,3}
+        assert {len(item.likes) for item in posts} == {1,2,3}
         assert db.session.scalar(db.select(db.func.count()).select_from(Like)) > 0
         assert db.session.scalar(db.select(db.func.count()).select_from(Comment)) == 12
 

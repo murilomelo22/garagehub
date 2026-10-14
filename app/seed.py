@@ -172,8 +172,9 @@ def seed_database():
             post=Post(author=users[owner],text=content,photo=demo_photo(paint,car.title),created_at=now-timedelta(hours=hours))
             db.session.add(post)
             db.session.flush()
-        for other in range(3):
-            if (index+other)%3!=0 and not db.session.get(Like,(users[other].id,post.id)):
+        for offset in range(1+index%3):
+            other = (owner+offset+1)%3
+            if not db.session.get(Like,(users[other].id,post.id)):
                 db.session.add(Like(user_id=users[other].id,post_id=post.id))
         for offset in range(1+index%3):
             author=users[(owner+offset+1)%3]
