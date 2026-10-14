@@ -21,7 +21,7 @@
         <form method="post"
               action="{{ url_for('social.follow', user_id=user.id) }}">
           {{ csrf_field() }}
-          <button class="btn btn-primary">{{ 'Deixar de seguir' if following else 'Seguir' }}</button>
+          <button class="btn btn-primary">{{ 'Seguindo' if following else 'Seguir' }}</button>
         </form>
         {{ friendship_actions(user, friendship) }}
       {% else %}
@@ -41,7 +41,7 @@
       <h2>Garagem de {{ user.username }}</h2>
     </div>
   </div>
-  <div class="car-grid">
+  <div class="car-grid" data-owner-id="{{ user.id }}">
     {% for car in user.vehicles %}
       {{ car_card(car) }}
     {% else %}

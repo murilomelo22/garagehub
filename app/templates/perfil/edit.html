@@ -31,7 +31,7 @@
              placeholder="Ex.: São Paulo, SP">
     </label>
     <label>
-      Bio<textarea name="bio" maxlength="500" rows="5" placeholder="Seus carros, suas paixões, sua história…">{{ request.form.get('bio',current_user.bio) }}</textarea>
+      Sobre você<textarea name="bio" maxlength="500" rows="5" placeholder="Seus carros, suas paixões, sua história…">{{ request.form.get('bio',current_user.bio) }}</textarea>
     </label>
     <div class="actions">
       <button class="btn btn-primary">Salvar perfil {{ icon('check', 18) }}</button>

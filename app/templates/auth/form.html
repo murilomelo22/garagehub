@@ -13,7 +13,7 @@
       <p>Aqui, a conversa sempre começa pela garagem.</p>
       <img src="{{ url_for('static', filename='img/car.svg') }}"
            alt="Carro esportivo ilustrado">
-      <span class="auth-story-label">DRIVEN BY PASSION.</span>
+      <span class="auth-story-label">FEITO PARA DIRIGIR.</span>
     </section>
     <section class="panel auth-panel">
       <span class="eyebrow">{{ 'SEU PRIMEIRO PASSO' if mode == 'register' else 'DE VOLTA À GARAGEM' }}</span>
@@ -34,7 +34,7 @@
                    placeholder="seu_usuario"
                    autocomplete="username"
                    required>
-            <small>3–30 letras, números ou underscores.</small>
+            <small>3–30 letras, números ou sublinhados (_).</small>
           </label>
           <label>
             E-mail

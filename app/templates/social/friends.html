@@ -21,6 +21,7 @@
       {% endfor %}
     </div>
     <h3 class="subheading">Pedidos de amizade</h3>
+    <div data-pending-requests>
     {% for id, link in friendships.items() if link.status == 'pending' %}
       {% set user = users_by_id[id] %}
       <div class="friend-row">
@@ -31,6 +32,7 @@
     {% else %}
       <p class="muted">Nenhum pedido pendente.</p>
     {% endfor %}
+    </div>
   </section>
   <div class="section-heading">
     <div>
@@ -48,6 +50,12 @@
            aria-label="Buscar usuários">
     <button class="btn btn-primary">Buscar</button>
   </form>
+  <form method="get" class="filter-bar" data-friends-filter>
+    <input type="hidden" name="q" value="{{ q }}">
+    <label>Cidade<select name="city"><option value="">Todas as cidades</option>{% for item in cities %}<option value="{{ item }}" {{ 'selected' if item==city }}>{{ item }}</option>{% endfor %}</select></label>
+    <label>Marca<select name="brand"><option value="">Todas as marcas</option>{% for item in brands %}<option value="{{ item }}" {{ 'selected' if item==brand }}>{{ item }}</option>{% endfor %}</select></label>
+    <button class="btn btn-secondary">Filtrar</button>
+  </form>
   <div class="people-grid">
     {% for user in page.items %}
       <article class="panel person-card"><a href="{{ url_for('perfil.public',username=user.username) }}">{{ avatar(user,true) }}
@@ -60,7 +68,7 @@
         <form method="post" action="{{ url_for('social.follow',user_id=user.id) }}">
           {{ csrf_field() }}
           <button class="btn {{ 'btn-secondary' if user.id in following_ids else 'btn-primary' }} btn-small">
-            {{ 'Deixar de seguir' if user.id in following_ids else 'Seguir' }}
+            {{ 'Seguindo' if user.id in following_ids else 'Seguir' }}
           </button>
         </form>
         {{ friendship_actions(user,friendships.get(user.id) ) }}
@@ -77,12 +85,12 @@
   <nav class="pagination" aria-label="Páginas da comunidade">
     {% if page.has_prev %}
       <a class="btn btn-secondary"
-         href="{{ url_for('social.friends',q=q,page=page.prev_num) }}">Anterior</a>
+         href="{{ url_for('social.friends',q=q,city=city,brand=brand,page=page.prev_num) }}">Anterior</a>
     {% endif %}
     <span>{{ page.page }} / {{ page.pages }}</span>
     {% if page.has_next %}
       <a class="btn btn-secondary"
-         href="{{ url_for('social.friends',q=q,page=page.next_num) }}">Próxima</a>
+         href="{{ url_for('social.friends',q=q,city=city,brand=brand,page=page.next_num) }}">Próxima</a>
     {% endif %}
   </nav>
 {% endif %}

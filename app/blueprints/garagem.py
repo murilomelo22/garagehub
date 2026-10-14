@@ -90,14 +90,18 @@ def detail(vehicle_id):
 
     chart = {
         "labels": [item.date.isoformat() for item in vehicle.stats],
-        "power": [item.power for item in vehicle.stats],
     }
+    for metric in ("power", "torque", "zero_to_hundred", "top_speed", "consumption"):
+        chart[metric] = [getattr(item, metric) for item in vehicle.stats]
+    config = DEFAULT_CONFIG | {"paint_color": {"Vermelho": "#c94432", "Branco": "#c8c9c6", "Cinza": "#767d89", "Azul": "#244f91", "Preto": "#24272d"}.get(vehicle.color, DEFAULT_CONFIG["paint_color"])}
     return render_template(
         "garagem/detail.html",
         title=vehicle.title,
         vehicle=vehicle,
         chart=chart,
-        viewer_config=vehicle.viewer_config or DEFAULT_CONFIG,
+        viewer_config=config | (vehicle.viewer_config or {}),
+        viewer_defaults=config,
+        meta_description=f"Conheça o projeto {vehicle.title} {vehicle.year} de {vehicle.owner.username}: histórico de evolução, modificações e Garage Studio 3D.",
     )
 
 

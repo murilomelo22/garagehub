@@ -4,7 +4,7 @@
     <div>
       <span class="eyebrow">CONECTADOS PELA MESMA PAIXÃO</span>
       <h1>
-        Seu feed<span class="live-badge"><span class="status-dot"></span> GARAGE LIFE</span>
+        Seu feed<span class="live-badge"><span class="status-dot"></span> NA GARAGEM</span>
       </h1>
       <p>O que está acontecendo nas garagens que você acompanha.</p>
     </div>
@@ -12,7 +12,7 @@
   </div>
   <section class="feed-banner">
     <div>
-      <span class="eyebrow">DRIVEN BY PASSION.</span>
+      <span class="eyebrow">FEITO PARA DIRIGIR.</span>
       <h2>
         Mais que carros.
         <br>
@@ -55,14 +55,20 @@
           <button class="btn btn-primary btn-small">Publicar {{ icon('arrow', 16) }}</button>
         </div>
       </form>
+      <form method="get" class="filter-bar" data-feed-filter>
+        <label>Publicações<select name="filter"><option value="all" {{ 'selected' if feed_filter=='all' }}>Todos</option><option value="following" {{ 'selected' if feed_filter=='following' }}>Seguindo</option></select></label>
+        <label>Marca na garagem<select name="brand"><option value="">Todas as marcas</option>{% for item in brands %}<option value="{{ item }}" {{ 'selected' if item==brand }}>{{ item }}</option>{% endfor %}</select></label>
+        <button class="btn btn-secondary">Filtrar</button>
+      </form>
       <div class="feed-label">
         <span>ÚLTIMAS DA COMUNIDADE</span><span>Mais recentes primeiro</span>
       </div>
+      <div data-feed-posts>
       {% for post in page.items %}
         <article class="panel post" id="post-{{ post.id }}">
           <div class="post-header">
             <a class="account"
-               href="{{ url_for('perfil.public',username=post.author.username) }}">{{ avatar(post.author) }}<span><strong>{{ post.author.username }}</strong><small>{{ post.author.city or 'Entusiasta automotivo' }}</small></span></a><time datetime="{{ post.created_at.isoformat() }}Z">{{ post.created_at.strftime("%d/%m · %H:%M") }} UTC</time>
+               href="{{ url_for('perfil.public',username=post.author.username) }}">{{ avatar(post.author) }}<span><strong>{{ post.author.username }}</strong><small>{{ post.author.city or 'Entusiasta automotivo' }}</small></span></a><time datetime="{{ post.created_at.isoformat() }}Z" data-relative-time title="{{ (post.created_at|brasilia).strftime('%d/%m/%Y · %H:%M') }} · Brasília">{{ post.created_at|relative_time }}</time>
           </div>
           {% if post.text %}<p class="post-text preserve-lines">{{ post.text }}</p>{% endif %}
           {% if post.photo %}
@@ -126,16 +132,17 @@
           <a class="btn btn-secondary" href="{{ url_for('social.friends') }}">Encontrar pessoas {{ icon('arrow', 16) }}</a>
         </section>
       {% endfor %}
+      </div>
       {% if page.pages > 1 %}
         <nav class="pagination" aria-label="Páginas do feed">
           {% if page.has_prev %}
             <a class="btn btn-secondary"
-               href="{{ url_for('social.feed',page=page.prev_num) }}">Mais recentes</a>
+               href="{{ url_for('social.feed',page=page.prev_num,filter=feed_filter,brand=brand) }}">Mais recentes</a>
           {% endif %}
           <span>{{ page.page }} / {{ page.pages }}</span>
           {% if page.has_next %}
             <a class="btn btn-secondary"
-               href="{{ url_for('social.feed',page=page.next_num) }}">Mais antigos</a>
+               href="{{ url_for('social.feed',page=page.next_num,filter=feed_filter,brand=brand) }}">Mais antigos</a>
           {% endif %}
         </nav>
       {% endif %}
@@ -179,13 +186,13 @@
         <a class="aside-link" href="{{ url_for('social.friends') }}">Explorar comunidade {{ icon('arrow', 16) }}</a>
       </section>
       <div class="community-note">
-        <span class="eyebrow">GARAGE ETIQUETTE</span>
+        <span class="eyebrow">RESPEITO NA GARAGEM</span>
         <p>
           Respeite cada projeto.
           <br>
           A paixão é o que nos une.
         </p>
-        <span>EST. 2026 / GARAGEHUB</span>
+        <span>DESDE 2026 / GARAGEHUB</span>
       </div>
     </aside>
   </div>

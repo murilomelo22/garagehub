@@ -1,97 +1,100 @@
-"""Exporta uma prévia pública para GitHub Pages usando apenas dados fictícios.
+"""Exporta a prévia interativa sem ler contas, sessões ou uploads reais."""
 
-Não abre o banco real nem publica contas, sessões ou fotos de usuários.
-"""
-
-from html import escape, unescape
 from hashlib import sha256
+from html import escape, unescape
+import json
+import os
 from pathlib import Path
 import re
 import shutil
 import sys
 import tempfile
+from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from flask import render_template_string
 from app import create_app
 from app.extensions import db
-from app.models import User, Vehicle
+from app.models import Follow, Friendship, Post, User, Vehicle
 from app.seed import seed_database
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs"
-BANNER = (
-    '<aside class="preview-banner" aria-label="Sobre esta prévia">'
-    '<strong>PRÉVIA · DADOS DE EXEMPLO</strong>'
-    '<span>Explore a comunidade e os carros. Contas e alterações não estão disponíveis aqui.</span>'
-    '<a href="acesso.html">Saiba mais</a></aside>'
-)
+SITE_URL = os.getenv("GARAGEHUB_SITE_URL", "https://murilomelo22.github.io/garagehub").rstrip("/")
+BANNER = ('<aside class="preview-banner" aria-label="Modo demonstração">'
+          '<strong>PRÉVIA INTERATIVA</strong><span>Seus testes ficam apenas neste navegador.</span>'
+          '<a href="acesso.html">Sobre a demonstração</a></aside>')
 
 
-def export_html(source, routes, uploads, search_index):
+def export_html(source, routes, uploads, data, destination):
+    """Reescreve caminhos e declara ações locais; mantém os formulários acessíveis."""
+    def annotate_link(match):
+        tag = match[0]
+        href = re.search(r'href="([^"]+)"', tag)
+        if not href:
+            return tag
+        path = urlsplit(unescape(href[1])).path
+        kind, identity = None, ""
+        if path in {"/garagem/novo", "/auth/cadastro"}:
+            kind = "car"
+        elif re.fullmatch(r"/garagem/\d+/editar", path):
+            kind, identity = "edit", path.split("/")[2]
+        elif re.fullmatch(r"/estatisticas/\d+", path):
+            kind, identity = "evolution", path.split("/")[2]
+        elif path == "/perfil/editar":
+            kind = "profile"
+        if kind:
+            return tag[:-1] + f' data-preview-open="{kind}" data-preview-id="{identity}">'
+        if path == "/auth/login":
+            return tag[:-1] + ' data-enter-visitor>'
+        return tag
+    source = re.sub(r"<a\b[^>]*>", annotate_link, source)
+    source = re.sub(r'<meta name="csrf-token"[^>]*>', "", source)
+    source = re.sub(r'<input[^>]*name="csrf_token"[^>]*>', "", source)
+    def annotate_form(match):
+        tag = match[0]
+        if not re.search(r'method="post"', tag, re.I):
+            return tag
+        action = re.search(r'action="([^"]+)"', tag)
+        original = unescape(action[1]) if action else ""
+        tag = re.sub(r'method="post"', 'method="get"', tag, flags=re.I)
+        tag = re.sub(r'action="[^"]*"', 'action="#"', tag)
+        return tag[:-1] + f' data-preview-action="{escape(original, quote=True)}">'
+    source = re.sub(r"<form\b[^>]*>", annotate_form, source)
     def replace_url(match):
         attribute, quote, value = match.groups()
         decoded = unescape(value)
-        path = urlsplit(decoded).path
+        parsed = urlsplit(decoded)
+        path = parsed.path
         if path.startswith("/static/"):
             value = path[1:]
         elif path.startswith("/uploads/"):
             value = "uploads/" + uploads[Path(path).name]
-        elif decoded.startswith("/"):
-            value = routes.get(path, "acesso.html")
+        elif path in routes and (not parsed.scheme or parsed.hostname == "localhost"):
+            value = routes[path] + ("?" + parsed.query if parsed.query else "") + ("#" + parsed.fragment if parsed.fragment else "")
+        elif decoded.startswith("/") and not decoded.startswith("//"):
+            if re.fullmatch(r"/garagem/\d+/editar", path):
+                value = f"carro-{path.split('/')[2]}.html"
+            elif re.fullmatch(r"/estatisticas/\d+", path):
+                value = f"carro-{path.split('/')[2]}.html#metric-change"
+            else:
+                value = "garagem.html"
         return f"{attribute}={quote}{escape(value, quote=True)}{quote}"
-
-    source = re.sub(
-        r'''(href|src|action|data-gallery-src)\s*=\s*(["'])(.*?)\2''',
-        replace_url,
-        source,
-        flags=re.DOTALL,
-    )
-    source = re.sub(r'<meta name="csrf-token"[^>]*>', "", source)
-    source = re.sub(r'<input[^>]*name="csrf_token"[^>]*>', "", source)
-
-    def read_only_form(match):
-        opening, body = match.groups()
-        if 'id="viewer-form"' in opening:
-            opening = re.sub(r'method="post"', 'method="get"', opening)
-            opening = re.sub(r'action="[^"]*"', 'action="#"', opening)
-            body = re.sub(
-                r'<button[^>]*id="save-viewer"[^>]*>.*?</button>',
-                '<button id="save-viewer" class="btn btn-secondary full" disabled>Prévia sem salvamento</button>',
-                body,
-                flags=re.DOTALL,
-            )
-            return opening[:-1] + ' data-preview onsubmit="return false">' + body + "</form>"
-        if 'method="post"' in opening.lower():
-            return ""
-        return opening + body + "</form>"
-
-    source = re.sub(r'(<form\b[^>]*>)(.*?)</form>', read_only_form, source, flags=re.DOTALL)
+    source = re.sub(r'''(?<![\w-])(href|src|action|data-gallery-src)\s*=\s*(["'])(.*?)\2''', replace_url, source, flags=re.DOTALL)
     source = re.sub(r'(<main\b[^>]*>)', r'\1' + BANNER, source, count=1)
-    source = source.replace(
-        "</head>", '<link rel="stylesheet" href="static/css/preview.css"></head>'
-    ).replace(
-        "</body>", '<script src="static/js/preview.js" defer></script></body>'
-    )
-    source = source.replace("Começar minha garagem", "Explorar garagem")
-    source = source.replace("Já tenho conta", "Ver comunidade")
-    source = source.replace("Minha garagem", "Garagem de exemplo")
-    source = source.replace('href="acesso.html">Explorar garagem', 'href="garagem.html">Explorar garagem')
-    source = source.replace('href="acesso.html">Ver comunidade', 'href="feed.html">Ver comunidade')
-    for username, searchable in search_index.items():
-        pattern = r'(<article class="panel person-card")(>.*?<h3>' + re.escape(username) + r'</h3>)'
-        source = re.sub(
-            pattern,
-            lambda m: m[1] + ' data-search="' + escape(searchable, quote=True) + '"' + m[2],
-            source,
-            flags=re.DOTALL,
-        )
+    source = re.sub(r'(<a[^>]*data-enter-visitor[^>]*>).*?(</a>)', r'\1Entrar como visitante\2', source, flags=re.DOTALL)
+    source = source.replace('aria-label="Sair"', 'aria-label="Sair da demonstração"')
+    payload = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    source = source.replace("</head>", f'<script id="demo-data" type="application/json">{payload}</script><script src="static/js/preview.js" defer></script></head>')
+    canonical = SITE_URL + "/" + ("" if destination == "index.html" else destination)
+    source = re.sub(r'(<link rel="canonical" href=")[^"]*(")', lambda match: match[1] + canonical + match[2], source)
+    source = re.sub(r'(<meta property="og:url" content=")[^"]*(")', lambda match: match[1] + canonical + match[2], source)
+    source = re.sub(r'(<meta (?:property="og:image"|name="twitter:image") content=")[^"]*(")', lambda match: match[1] + SITE_URL + "/static/img/social-card.png" + match[2], source)
     return source
 
 
 def build():
-    # Limpa somente a pasta de saída dedicada. A aplicação real fica intacta.
     if OUTPUT.exists():
         shutil.rmtree(OUTPUT)
     OUTPUT.mkdir()
@@ -99,105 +102,76 @@ def build():
     (OUTPUT / ".nojekyll").touch()
     with tempfile.TemporaryDirectory(prefix="garagehub-pages-") as temporary:
         upload_dir = Path(temporary) / "uploads"
-        app = create_app(
-            {
-                "TESTING": True,
-                "SECRET_KEY": "chave-da-exportacao-apenas-dados-ficticios",
-                "SQLALCHEMY_DATABASE_URI": "sqlite://",
-                "UPLOAD_FOLDER": str(upload_dir),
-            }
-        )
+        app = create_app({"TESTING": True, "PREVIEW_MODE": True,
+            "SECRET_KEY": "chave-da-exportacao-apenas-dados-ficticios",
+            "SQLALCHEMY_DATABASE_URI": "sqlite://", "UPLOAD_FOLDER": str(upload_dir)})
         with app.app_context():
             seed_database()
             users = list(db.session.scalars(db.select(User).order_by(User.id)))
             cars = list(db.session.scalars(db.select(Vehicle).order_by(Vehicle.id)))
-            demo_user = users[0]
-            routes = {
-                "/": "index.html", "/feed": "feed.html", "/amigos": "amigos.html",
-                "/garagem/": "garagem.html", "/garagem": "garagem.html",
-            }
+            routes = {"/": "index.html", "/feed": "feed.html", "/amigos": "amigos.html",
+                      "/garagem/": "garagem.html", "/garagem": "garagem.html",
+                      "/perfil": "perfil-lucas_gti.html", "/perfil/editar": "perfil-lucas_gti.html",
+                      "/auth/login": "acesso.html", "/auth/cadastro": "garagem.html", "/garagem/novo": "garagem.html"}
             routes.update({f"/u/{user.username}": f"perfil-{user.username}.html" for user in users})
             routes.update({f"/garagem/{car.id}": f"carro-{car.id}.html" for car in cars})
-            search_index = {
-                user.username: " ".join([user.username, user.city or "", user.bio or ""] + [
-                    f"{car.brand} {car.model}" for car in user.vehicles
-                ]) for user in users
-            }
-            demo_id = str(demo_user.id)
             uploads = {}
             (OUTPUT / "uploads").mkdir()
             for file in sorted(upload_dir.iterdir()):
                 name = f"demo-{sha256(file.read_bytes()).hexdigest()[:12]}{file.suffix}"
                 shutil.copyfile(file, OUTPUT / "uploads" / name)
                 uploads[file.name] = name
-
+            following = list(db.session.scalars(db.select(Follow.followed_id).where(Follow.follower_id == users[0].id)))
+            friends = list(db.session.scalars(db.select(Friendship)))
+            utc = lambda value: value.replace(tzinfo=timezone.utc).isoformat()
+            data = {"version": 1, "exportedAt": datetime.now(timezone.utc).isoformat(), "demoUserId": users[0].id,
+                "following": following, "friendships": {str(link.other_id(users[0].id)): link.status for link in friends if users[0].id in (link.user_low_id,link.user_high_id)},
+                "users": [{"id":user.id,"username":user.username,"city":user.city,"bio":user.bio,
+                           "followers":db.session.scalar(db.select(db.func.count()).select_from(Follow).where(Follow.followed_id==user.id,Follow.follower_id!=users[0].id))} for user in users],
+                "cars": [{"id":car.id,"userId":car.user_id,"brand":car.brand,"model":car.model,"year":car.year,"color":car.color,
+                    "engine":car.engine,"transmission":car.transmission,"description":car.description,"photo":"uploads/"+uploads[car.photos[0].filename],
+                    "viewerConfig":car.viewer_config,"defaults":car.viewer_config,
+                    "stats":[{"id":item.id,"date":item.date.isoformat(),**{metric:getattr(item,metric) for metric in ["power","torque","zero_to_hundred","top_speed","consumption"]}} for item in car.stats],
+                    "modifications":[{"id":item.id,"name":item.name,"category":item.category,"date":item.date.isoformat(),"value":float(item.value)} for item in car.modifications]} for car in cars],
+                "posts":[{"id":post.id,"userId":post.user_id,"text":post.text,"createdAt":utc(post.created_at),"photo":"uploads/"+uploads[post.photo] if post.photo else None,
+                    "likes":[like.user_id for like in post.likes],"comments":[{"id":comment.id,"userId":comment.user_id,"text":comment.text,"createdAt":utc(comment.created_at)} for comment in post.comments]} for post in db.session.scalars(db.select(Post).order_by(Post.created_at.desc()))]}
+            demo_id = str(users[0].id)
         client = app.test_client()
         homepage = client.get("/")
         assert homepage.status_code == 200
-        (OUTPUT / "index.html").write_text(export_html(homepage.text, routes, uploads, search_index))
+        (OUTPUT / "index.html").write_text(export_html(homepage.text,routes,uploads,data,"index.html"),encoding="utf-8")
         with client.session_transaction() as session:
             session["_user_id"] = demo_id
             session["_fresh"] = True
-        for route, destination in routes.items():
-            if destination == "index.html" or route == "/garagem":
+        exported = {"index.html"}
+        for route,destination in routes.items():
+            if destination in exported or route in {"/perfil","/perfil/editar","/auth/login","/auth/cadastro","/garagem/novo"}:
                 continue
-            response = client.get(route)
+            response = client.get(route + ("?filter=all" if route=="/feed" else ""))
             if response.status_code != 200:
                 raise RuntimeError(f"Falha na exportação: {route} HTTP {response.status_code}")
-            (OUTPUT / destination).write_text(export_html(response.text, routes, uploads, search_index))
+            (OUTPUT / destination).write_text(export_html(response.text,routes,uploads,data,destination),encoding="utf-8")
+            exported.add(destination)
         with app.test_request_context("/"):
-            about = render_template_string(
-                """{% extends 'base.html' %}{% block content %}
-                <section class="panel empty-state"><span class="eyebrow">CONHEÇA O GARAGEHUB</span>
-                <h1>Você está na prévia.</h1>
-                <p>Os perfis, carros e publicações são exemplos. Você pode navegar pela comunidade,
-                ver os projetos e experimentar o visualizador 3D.</p>
-                <p>Cadastro, login, publicações e salvamento de alterações estarão disponíveis
-                na versão completa. Nenhum dado pessoal é solicitado nesta prévia.</p>
-                <div class="actions"><a class="btn btn-primary" href="/garagem/">Explorar garagem</a>
-                <a class="btn btn-secondary" href="/feed">Ver comunidade</a></div></section>
-                {% endblock %}""", title="Conheça a prévia"
-            )
-        (OUTPUT / "acesso.html").write_text(export_html(about, routes, uploads, search_index))
+            about = render_template_string('''{% extends 'base.html' %}{% block content %}
+            <section class="panel empty-state"><span class="eyebrow">CONHEÇA O GARAGEHUB</span><h1>Entre como visitante.</h1>
+            <p>Explore o perfil de Lucas, nove carros e a comunidade. Você pode adicionar projetos, registrar medições, publicar fotos e experimentar o Garage Studio.</p>
+            <p>Os dados de exemplo e suas alterações ficam apenas neste navegador. Esta demonstração não cria uma conta real.</p>
+            <div class="actions"><a class="btn btn-primary" href="/auth/login">Entrar como visitante</a><a class="btn btn-secondary" href="/garagem/novo">Adicionar veículo</a></div></section>
+            {% endblock %}''',title="Demonstração interativa",meta_description="Teste o GarageHub como visitante: garagem, evolução, publicações e visualização 3D com dados salvos apenas no seu navegador.")
+        (OUTPUT / "acesso.html").write_text(export_html(about,routes,uploads,data,"acesso.html"),encoding="utf-8")
+        prototype = client.get("/garagem/1").text
+        prototype = prototype.replace("<title>Volkswagen Golf GTI · GarageHub</title>","<title>Projeto local · GarageHub</title>")
+        prototype = prototype.replace("Conheça o projeto Volkswagen Golf GTI 2018 de lucas_gti: histórico de evolução, modificações e Garage Studio 3D.","Projeto de demonstração criado neste navegador: garagem, medições e configuração 3D local.")
+        prototype = prototype.replace('content="Volkswagen Golf GTI · GarageHub"','content="Projeto local · GarageHub"')
+        (OUTPUT / "carro.html").write_text(export_html(prototype,routes,uploads,data,"carro.html"),encoding="utf-8")
         with app.app_context():
             db.session.remove()
             db.engine.dispose()
-
-    (OUTPUT / "static" / "css" / "preview.css").write_text(
-        ".preview-banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;"
-        "padding:14px 18px;margin-bottom:24px;border:1px solid #493126;border-radius:12px;"
-        "background:#211b18;color:#cfc5bf;font-size:13px}"
-        ".preview-banner strong{color:#ff7049;font-size:11px;letter-spacing:.08em}"
-        ".preview-banner a{color:#ff7049;margin-left:auto}"
-        "[hidden]{display:none!important}.preview-empty{margin-top:20px;color:#aca5a2}"
-    )
-    (OUTPUT / "static" / "js" / "preview.js").write_text(
-        """document.addEventListener('submit', event => {
-          const form = event.target;
-          if (form.matches('[data-preview]')) {
-            event.preventDefault(); event.stopImmediatePropagation(); return;
-          }
-          if (form.querySelector('[name="q"]')) {
-            event.preventDefault();
-            const query = form.querySelector('[name="q"]').value;
-            location.href = 'amigos.html?q=' + encodeURIComponent(query);
-          }
-        }, true);
-        const query = new URLSearchParams(location.search).get('q') || '';
-        const normalize = value => value.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
-        document.querySelectorAll('[name="q"]').forEach(input => { input.value = query; });
-        const cards = [...document.querySelectorAll('.person-card')];
-        if (cards.length && query) {
-          cards.forEach(card => { card.hidden = !normalize(card.dataset.search || card.textContent).includes(normalize(query)); });
-          if (cards.every(card => card.hidden)) {
-            const empty = document.createElement('p'); empty.className = 'preview-empty';
-            empty.textContent = 'Nenhuma garagem de exemplo encontrada. Tente outro nome, cidade ou carro.';
-            document.querySelector('.people-grid').append(empty);
-          }
-        }
-        """
-    )
-    print(f"Prévia exportada: {len(list(OUTPUT.glob('*.html')))} páginas em {OUTPUT}")
+    pages = sorted(path.name for path in OUTPUT.glob("*.html") if path.name != "carro.html")
+    (OUTPUT / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+"".join(f"<url><loc>{SITE_URL}/{name if name!='index.html' else ''}</loc></url>" for name in pages)+"</urlset>",encoding="utf-8")
+    (OUTPUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml\n")
+    print(f"V0.1 exportada: {len(list(OUTPUT.glob('*.html')))} páginas em {OUTPUT}")
 
 
 if __name__ == "__main__":

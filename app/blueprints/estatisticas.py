@@ -33,7 +33,7 @@ def edit(vehicle_id):
             flash(str(error), "error")
     return render_template(
         "estatisticas/edit.html",
-        title="Performance & modificações",
+        title=f"Evolução de {vehicle.title}",
         vehicle=vehicle,
         today=date.today().isoformat(),
     )

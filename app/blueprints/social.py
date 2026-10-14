@@ -14,14 +14,19 @@ bp = Blueprint("social", __name__)
 @bp.get("/feed")
 @login_required
 def feed():
+    feed_filter = request.args.get("filter", "following")
+    if feed_filter not in {"all", "following"}:
+        feed_filter = "following"
+    brand = request.args.get("brand", "").strip()[:50]
     followed = db.select(Follow.followed_id).where(
         Follow.follower_id == current_user.id
     )
-    query = (
-        db.select(Post)
-        .where(or_(Post.user_id == current_user.id, Post.user_id.in_(followed)))
-        .order_by(Post.created_at.desc(), Post.id.desc())
-    )
+    query = db.select(Post).order_by(Post.created_at.desc(), Post.id.desc())
+    if feed_filter == "following":
+        query = query.where(or_(Post.user_id == current_user.id, Post.user_id.in_(followed)))
+    if brand:
+        query = query.where(Post.author.has(User.vehicles.any(Vehicle.brand == brand)))
+    brands = db.session.scalars(db.select(Vehicle.brand).distinct().order_by(Vehicle.brand)).all()
     page = db.paginate(query, per_page=10, max_per_page=10, error_out=False)
     suggestions = db.session.scalars(
         db.select(User)
@@ -46,6 +51,9 @@ def feed():
         suggestions=suggestions,
         liked_ids=liked_ids,
         following_count=following_count,
+        feed_filter=feed_filter,
+        brand=brand,
+        brands=brands,
     )
 
 
@@ -115,6 +123,8 @@ def delete_post(post_id):
 @login_required
 def friends():
     q = request.args.get("q", "").strip()[:100]
+    city = request.args.get("city", "").strip()[:80]
+    brand = request.args.get("brand", "").strip()[:50]
     query = db.select(User).where(User.id != current_user.id)
     if q:
         # O EXISTS evita duplicar usuários com vários carros encontrados.
@@ -130,6 +140,10 @@ def friends():
                 ),
             )
         )
+    if city:
+        query = query.where(User.city == city)
+    if brand:
+        query = query.where(User.vehicles.any(Vehicle.brand == brand))
     page = db.paginate(
         query.order_by(User.username), per_page=12, max_per_page=12, error_out=False
     )
@@ -159,6 +173,9 @@ def friends():
         friendships=friendships,
         users_by_id=users_by_id,
         following_ids=following_ids,
+        city=city, brand=brand,
+        cities=db.session.scalars(db.select(User.city).where(User.city != "").distinct().order_by(User.city)).all(),
+        brands=db.session.scalars(db.select(Vehicle.brand).distinct().order_by(Vehicle.brand)).all(),
     )
 
 

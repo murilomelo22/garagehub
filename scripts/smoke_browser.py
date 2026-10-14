@@ -85,13 +85,13 @@ def run():
                 page.get_by_label("Senha", exact=True).fill("GarageHub123!")
                 page.get_by_role("button", name="Entrar na GarageHub").click()
                 page.wait_for_url("**/feed")
-                assert page.locator(".post").count() == 3
+                assert page.locator(".post").count() == 4
                 page.locator("#post-text").fill(
                     "Post publicado pelo teste de navegador."
                 )
                 page.get_by_role("button", name="Publicar", exact=True).click()
                 page.wait_for_url("**/feed")
-                assert page.locator(".post").count() == 4
+                assert page.locator(".post").count() == 5
                 page.locator(".post").first.get_by_role(
                     "button", name="Curtir post", exact=True
                 ).click()
@@ -99,7 +99,7 @@ def run():
                     page.locator(".post").first.locator(".reaction.liked").count() == 1
                 )
                 page.goto(base + "/garagem/")
-                assert page.locator(".car-card").count() == 2
+                assert page.locator(".car-card").count() == 3
                 page.locator(".car-card").last.click()
                 page.wait_for_selector('#car-viewer[data-ready="true"]', timeout=60000)
                 page.wait_for_function(
@@ -128,7 +128,7 @@ def run():
                 page.locator('input[name="wheel_size"]').fill("1.25")
                 page.locator('select[name="suspension"]').select_option("lowered")
                 page.locator('select[name="spoiler"]').select_option("yes")
-                page.get_by_role("button", name="Salvar visual").click()
+                page.get_by_role("button", name="Salvar configuração").click()
                 page.wait_for_function(
                     "document.getElementById('viewer-feedback').textContent.includes('Visual salvo')"
                 )
@@ -160,7 +160,7 @@ def run():
                 page.goto(base + "/amigos?q=Curitiba")
                 assert page.locator(".person-card").count() == 1
                 assert page.locator(".person-card h3").inner_text() == "ana_silva"
-                for width, height in [(390, 844), (360, 800)]:
+                for width, height in [(360, 800), (768, 1024), (1280, 900)]:
                     page.set_viewport_size({"width": width, "height": height})
                     for path in [
                         "/feed",
@@ -183,7 +183,7 @@ def run():
                 assert not errors, errors
                 browser.close()
                 print(
-                    "Navegador OK: login, post, curtida, busca, Chart.js, Three.js, rotação, persistência 3D e 7 telas em 360/390 px."
+                    "Navegador OK: login, post, curtida, busca, Chart.js, Three.js, rotação, persistência 3D e 7 telas em 360/768/1280 px."
                 )
                 print(f"Capturas: {screenshots}")
                 print(f"Arquivos CDN verificados por HTTPS: {len(cdn_cache)}")

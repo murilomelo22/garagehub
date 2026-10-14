@@ -4,7 +4,7 @@
     <div>
       <span class="eyebrow">SEUS CARROS. SUAS HISTÓRIAS.</span>
       <h1>
-        Minha garagem<span class="count-badge">{{ vehicles|length }}</span>
+        Minha garagem <span class="count-badge">{{ vehicles|length }}</span>
       </h1>
       <p>Cada detalhe faz parte do seu projeto.</p>
     </div>
@@ -12,13 +12,13 @@
   </div>
   <section class="garage-banner">
     <div>
-      <span class="eyebrow">BUILT, NOT BOUGHT.</span>
+      <span class="eyebrow">CONSTRUÍDO DETALHE A DETALHE.</span>
       <h2>
         O próximo capítulo
         <br>
         começa na sua garagem.
       </h2>
-      <p>Acompanhe a evolução. Compartilhe a paixão.</p>
+      <p>Acompanhe a evolução. Compartilhe cada etapa.</p>
     </div>
     <img src="{{ url_for('static', filename='img/car.svg') }}"
          alt="Ilustração de um carro">
@@ -27,7 +27,7 @@
     <h2>Meus projetos</h2>
     <span class="muted">{{ vehicles|length }} veículos na garagem</span>
   </div>
-  <div class="car-grid">
+  <div class="car-grid" data-owner-id="{{ current_user.id }}">
     {% for car in vehicles %}
       {{ car_card(car) }}
     {% else %}

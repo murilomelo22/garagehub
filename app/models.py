@@ -1,4 +1,4 @@
-"""Modelos da V0.0. As relações removem os registros dependentes da garagem."""
+"""Modelos da V0.1. As relações removem os registros dependentes da garagem."""
 
 from datetime import datetime, timezone
 from flask_login import UserMixin

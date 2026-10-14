@@ -79,7 +79,7 @@
         {{ car.engine or 'Motor não informado' }} <span>·</span> {{ car.transmission or 'Câmbio não informado' }}
       </p>
       <div class="car-footer">
-        <span>{{ icon('bolt', 16) }} {{ ('%g'|format(car.latest_stats.power) ) ~ ' cv' if car.latest_stats else 'Seu próximo projeto' }}</span><span class="orange">Ver projeto {{ icon('arrow', 16) }}</span>
+        <span>{{ icon('bolt', 16) }} {{ (car.latest_stats.power|number_br) ~ ' cv' if car.latest_stats else 'Seu próximo projeto' }}</span><span class="orange">Ver projeto {{ icon('arrow', 16) }}</span>
       </div>
     </div>
   </a>

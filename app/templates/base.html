@@ -6,30 +6,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#101114">
-    <meta name="description"
-          content="GarageHub: uma comunidade para quem vive a paixão por carros.">
+    {% set page_description = meta_description|default(title ~ ': projetos, evolução e histórias da comunidade GarageHub.', true) %}
+    <meta name="description" content="{{ page_description }}">
     <title>{{ title }} · GarageHub</title>
+    <link rel="canonical" href="{{ request.base_url }}">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:site_name" content="GarageHub">
+    <meta property="og:title" content="{{ title }} · GarageHub">
+    <meta property="og:description" content="{{ page_description }}">
+    <meta property="og:url" content="{{ request.base_url }}">
+    <meta property="og:image" content="{{ url_for('static',filename='img/social-card.png',_external=true) }}">
+    <meta property="og:image:alt" content="GarageHub: projetos, histórias e comunidade automotiva">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ title }} · GarageHub">
+    <meta name="twitter:description" content="{{ page_description }}">
+    <meta name="twitter:image" content="{{ url_for('static',filename='img/social-card.png',_external=true) }}">
     <link rel="icon"
           href="{{ url_for('static', filename='img/favicon.svg') }}"
           type="image/svg+xml">
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/format.js') }}" defer></script>
     {% block head %}{% endblock %}
   </head>
-  <body>
+  <body data-mode="{{ 'preview' if preview_mode else 'flask' }}"{% if vehicle is defined %} data-car-id="{{ vehicle.id }}"{% endif %}>
+    <a class="skip-link" href="#main">Pular para o conteúdo</a>
     <aside class="sidebar">
-      <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('car', 24) }}</span>Garage<span>Hub</span><small>0.0</small></a>
+      <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('car', 24) }}</span>Garage<span>Hub</span><small>0.1</small></a>
       <div class="sidebar-label">SUA COMUNIDADE AUTOMOTIVA</div>
       <nav aria-label="Navegação principal">
         {% set endpoint = request.endpoint or '' %}
         <a class="nav-item {{ 'active' if endpoint.startswith("social.feed") }}"
            href="{{ url_for('social.feed') }}">{{ icon("feed") }}<span>Feed</span></a>
         <a class="nav-item {{ 'active' if endpoint.startswith("garagem.") or endpoint.startswith('estatisticas.') }}"
-           href="{{ url_for('garagem.index') }}">{{ icon("car") }}<span>Minha garagem</span></a>
+           href="{{ url_for('garagem.index') }}">{{ icon("car") }}<span>Garagem</span></a>
         <a class="nav-item {{ 'active' if endpoint.startswith("social.friends") }}"
            href="{{ url_for('social.friends') }}">{{ icon("users") }}<span>Amigos</span></a>
         <a class="nav-item {{ 'active' if endpoint.startswith("perfil.") }}"
-           href="{{ url_for('perfil.public', username=current_user.username) if current_user.is_authenticated else url_for('auth.login') }}">{{ icon("user") }}<span>Perfil</span></a>
+           href="{{ url_for('perfil.me') }}">{{ icon("user") }}<span>Perfil</span></a>
       </nav>
       <div class="sidebar-note">
         <span class="orange">FEITO PARA ENTUSIASTAS</span>
@@ -55,7 +70,6 @@
     </aside>
     <div class="app-shell">
       <header class="topbar">
-        <span class="topbar-title">Sua paixão. Sua comunidade.</span>
         <form class="header-search"
               action="{{ url_for('social.friends') }}"
               method="get">
@@ -66,7 +80,7 @@
                  aria-label="Buscar na comunidade">
         </form>
         {% if current_user.is_authenticated %}
-          <a class="header-avatar"
+          <a class="header-avatar" aria-label="Abrir meu perfil"
              href="{{ url_for('perfil.public', username=current_user.username) }}">{{ avatar(current_user) }}</a>
         {% else %}
           <a class="btn btn-quiet btn-small" href="{{ url_for('auth.login') }}">Entrar {{ icon('arrow', 16) }}</a>
@@ -84,7 +98,7 @@
         {% block content %}{% endblock %}
       </main>
       <footer class="footer">
-        <span>GARAGEHUB <b>© 2026</b></span><span>Uma nova casa para sua paixão. <span class="orange">V0.0</span></span>
+        <span>GARAGEHUB <b>© 2026</b></span><span>Projetos que conectam. <span class="orange">V0.1</span></span>
       </footer>
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>

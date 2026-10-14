@@ -5,7 +5,7 @@
   <div class="page-heading">
     <div>
       <span class="eyebrow">CADA ETAPA DO SEU PROJETO</span>
-      <h1>Performance & modificações</h1>
+      <h1>Desempenho e modificações</h1>
       <p>{{ vehicle.title }} · {{ vehicle.year }}</p>
     </div>
   </div>
@@ -45,7 +45,7 @@
       <h2>Nova modificação</h2>
       <label>
         Nome
-        <input name="name" maxlength="100" placeholder="Ex.: Remap stage 1" required>
+        <input name="name" maxlength="100" placeholder="Ex.: Remapeamento" required>
       </label>
       <label>
         Categoria
@@ -102,7 +102,7 @@
             <tr>
               <td>{{ item.date.strftime("%d/%m/%Y") }}</td>
               {% for key,unit in [('power','cv'),('torque','Nm'),('zero_to_hundred','s'),('top_speed','km/h'),('consumption','km/l')] %}
-                <td>{{ ('%g'|format(item[key]) ) ~ ' ' ~ unit if item[key] is not none else '—' }}</td>
+                <td>{{ (item[key]|number_br) ~ ' ' ~ unit if item[key] is not none else '—' }}</td>
               {% endfor %}
               <td>
                 <form method="post"
@@ -129,7 +129,7 @@
         <div>
           <strong>{{ item.name }}</strong>
           <p class="muted">
-            {{ item.category }} · {{ item.date.strftime("%d/%m/%Y") }} · R$ {{ '%.2f'|format(item.value) |replace('.',',') }}
+            {{ item.category }} · {{ item.date.strftime("%d/%m/%Y") }} · {{ item.value|money_br }}
           </p>
         </div>
         <form method="post"

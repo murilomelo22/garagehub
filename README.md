@@ -1,6 +1,6 @@
-# GarageHub · V0.0
+# GarageHub · V0.1
 
-Rede social automotiva com garagem digital, acompanhamento de performance e personalização de um carro genérico em 3D. Nome provisório. Interface em português, tema escuro com acento laranja/vermelho e navegação adaptada ao celular.
+Rede social automotiva com garagem digital, acompanhamento de evolução e personalização de um carro genérico em 3D. Nome provisório. Interface em português, tema escuro com acento azul escuro, fundo `#101114` e assinatura de cultura de garagem e navegação adaptada ao celular.
 
 ## Rodar localmente
 
@@ -47,7 +47,11 @@ A prévia em **GitHub Pages** permite navegar pelo GarageHub com dados de exempl
 3. Escolha a branch **main**, a pasta **/docs** e clique em **Save**.
 4. Aguarde a publicação do GitHub e abra [GarageHub](https://murilomelo22.github.io/garagehub/).
 
-O endereço ficará disponível depois dessa ativação. A pasta `docs/` contém a página inicial, feed, garagens, perfis, busca nos exemplos e visualizador 3D. O banner identifica a prévia e os dados fictícios. Cadastro, login, publicações e salvamento estão indisponíveis porque GitHub Pages hospeda arquivos estáticos e não executa o backend Flask.
+O endereço fica disponível após a ativação. A pasta `docs/` contém 18 páginas, incluindo a demonstração e o modelo para carros criados no navegador. Clique em **Entrar como visitante** para usar o perfil de `lucas_gti`. Os botões Adicionar veículo, Editar carro, Registrar evolução e Novo projeto abrem formulários acessíveis, com salvamento local.
+
+A prévia usa `localStorage` na chave `garagehub:preview:v0.1`. Carros, medições, modificações, perfil de exemplo, posts com foto, curtidas, comentários, seguidores e configurações 3D sobrevivem à recarga no mesmo navegador. Não há autenticação real no Pages. Os dados não são enviados ao Flask, não são sincronizados entre dispositivos e deixam de existir se o armazenamento do site for apagado. As fotos são reduzidas a até 1200 px e 800 KB codificados; se faltar espaço, a interface informa a falha e mantém os dados anteriores.
+
+Os modais suportam teclado, Escape e devolução de foco. Os textos criados pelo visitante são escapados antes de entrar no HTML. A exportação usa somente registros fictícios; não publica e-mails, hashes de senha, sessões ou fotos reais.
 
 Para atualizar a prévia depois de alterar a interface, execute e publique a pasta gerada:
 
@@ -106,13 +110,13 @@ python seed.py
 python -m flask --app run seed
 ```
 
-Cria **3 usuários e 5 carros**, fotos ilustrativas geradas localmente, medições, modificações, relações sociais e posts. Pode ser executado novamente sem duplicar os mesmos exemplos. Não apaga nem substitui registros existentes.
+Cria **3 usuários e 9 carros**, fotos ilustrativas geradas localmente, medições, modificações, relações sociais e posts. Pode ser executado novamente sem duplicar os mesmos exemplos. Preserva os registros existentes. As medições reconhecidas como os números repetidos do seed antigo são corrigidas; históricos personalizados são preservados.
 
 | Usuário | E-mail | Cidade | Carros |
 | --- | --- | --- | --- |
-| `lucas_gti` | `lucas_gti@example.test` | São Paulo, SP | Golf GTI e Jetta GLI |
-| `ana_silva` | `ana_silva@example.test` | Curitiba, PR | Civic Si e MX-5 |
-| `pedro_rs` | `pedro_rs@example.test` | Belo Horizonte, MG | Focus RS |
+| `lucas_gti` | `lucas_gti@example.test` | São Paulo, SP | Golf GTI, Jetta GLI e Polo GTS |
+| `ana_silva` | `ana_silva@example.test` | Curitiba, PR | Civic Si, MX-5 e GT86 |
+| `pedro_rs` | `pedro_rs@example.test` | Belo Horizonte, MG | Focus RS, Fiesta ST e Sandero RS |
 
 Senha de todas as **contas de demonstração**: `GarageHub123!`. Use apenas em desenvolvimento. Sem seed, cadastre uma conta pelo botão da página inicial.
 
@@ -121,19 +125,19 @@ Senha de todas as **contas de demonstração**: `GarageHub123!`. Use apenas em d
 - Cadastro, login por usuário ou e-mail, logout e hash de senha com Werkzeug (scrypt).
 - Perfil com foto, bio e cidade. Página pública em `/u/<usuario>` com os carros do dono.
 - CRUD de veículos: marca, modelo, ano, cor, motor, câmbio e descrição. Galeria com envio e remoção de fotos; página pública por carro.
-- Histórico de potência em **cv**, torque em **Nm**, 0–100 km/h em **segundos**, máxima em **km/h** e consumo em **km/l**. A última medição por data aparece nos cards; o gráfico Chart.js usa o histórico completo em ordem de data. Medições podem ser removidas pelo dono.
+- Histórico de potência em **cv**, torque em **Nm**, 0–100 km/h em **segundos**, máxima em **km/h** e consumo em **km/l**. A última medição por data aparece nos cards; o gráfico Chart.js usa o histórico completo em ordem de data, seletor de potência/torque/0–100/consumo, detalhes ao passar o cursor e variação desde a primeira medição. Medições podem ser removidas pelo dono.
 - Modificações com nome, categoria, data e valor em reais, com duas casas decimais; podem ser removidas pelo dono.
-- Busca por usuário, cidade, marca ou modelo. Seguir/deixar de seguir e pedidos de amizade com aceitar, recusar, cancelar e remover. A página Amigos reúne amizades aceitas e pedidos pendentes.
-- Feed com posts próprios e de quem você **segue**, dos mais recentes para os mais antigos, com paginação. Texto e/ou foto, curtir/descurtir, comentar e excluir o próprio post.
-- Garage Studio: carro genérico feito de caixas, cilindros e geometrias primitivas, com OrbitControls para girar e zoom. Pintura, cor e escala das rodas (0,80–1,30×), suspensão original/rebaixada e spoiler. O dono pode alterar e salvar; visitantes veem o visual salvo. As opções reaparecem ao abrir a página.
+- Busca por usuário, cidade, marca ou modelo, com filtros combináveis de cidade e marca e estado Seguindo. Seguir/deixar de seguir e pedidos de amizade com aceitar, recusar, cancelar e remover. A página Amigos reúne amizades aceitas e pedidos pendentes.
+- Feed com filtros **Todos**, **Seguindo** e marca na garagem do autor. No Flask, o padrão continua sendo Seguindo; na demonstração, Todos. Texto e/ou foto, curtir/descurtir, comentar, contadores e exclusão do próprio post. Horários relativos em Brasília e indicação completa ao passar sobre a data.
+- Garage Studio: salvar configuração, redefinir os controles e exportar a imagem em PNG. Carro genérico feito de caixas, cilindros e geometrias primitivas, com OrbitControls para girar e zoom. Pintura, cor e escala das rodas (0,80–1,30×), suspensão original/rebaixada e spoiler. O dono pode alterar e salvar; visitantes veem o visual salvo. As opções reaparecem ao abrir a página.
 
 **Seguir e amizade são independentes:** aceitar uma amizade não adiciona automaticamente os posts ao feed. Siga a pessoa para acompanhar as publicações.
 
 ### Roteiro rápido para testar
 
 1. Execute o seed e entre como `lucas_gti`.
-2. Abra Minha garagem, entre no Golf GTI e registre uma nova medição ou modificação.
-3. Mude pintura, rodas, suspensão e spoiler no Garage Studio, clique em **Salvar visual** e recarregue.
+2. Abra Garagem, entre no Golf GTI e registre uma nova medição ou modificação.
+3. Mude pintura, rodas, suspensão e spoiler no Garage Studio, clique em **Salvar configuração** e recarregue.
 4. Publique no Feed, curta e comente um post.
 5. Busque `Curitiba`, `Honda` ou `Civic` em Amigos. Visite o perfil público de Ana.
 6. Envie um pedido a Pedro. Saia e entre como `pedro_rs` para aceitar em Amigos.
@@ -151,6 +155,7 @@ garagehub/
 │   ├── __init__.py             # Fábrica Flask, configuração e erros
 │   ├── extensions.py           # SQLAlchemy, Flask-Login e CSRF
 │   ├── models.py               # Usuários, carros e relações sociais
+│   ├── presentation.py        # Formatação pt-BR e horários de Brasília
 │   ├── helpers.py              # Validações, permissões e imagens
 │   ├── seed.py                 # Dados e ilustrações de exemplo
 │   ├── blueprints/
@@ -163,7 +168,11 @@ garagehub/
 │   ├── templates/              # Jinja2: base, macros e páginas
 │   └── static/                 # CSS, JS e SVGs locais
 ├── tests/                     # Testes de integração com pytest
-├── scripts/smoke_browser.py    # Validação opcional com navegador
+├── scripts/build_pages.py      # Exportação isolada para GitHub Pages
+├── scripts/smoke_browser.py    # Teste de navegador do Flask
+├── scripts/smoke_pages.py      # Teste de navegador da prévia
+├── scripts/check_accessibility.py # Contraste, rótulos e foco
+├── docs/                      # Exportação publicada no Pages
 └── instance/                  # Gerado e ignorado pelo Git
     ├── garagehub.db
     ├── secret.key
@@ -196,15 +205,27 @@ Validação opcional com navegador real:
 # Só é necessário se não houver Chromium/Chrome instalado:
 python -m playwright install chromium
 python scripts/smoke_browser.py
+python scripts/build_pages.py
+python scripts/smoke_pages.py
+python scripts/build_pages.py
+python scripts/check_accessibility.py
 ```
 
-O script usa automaticamente `chromium`/`google-chrome` do sistema; `BROWSER_PATH` permite indicar outro executável. Inicia um servidor e banco descartáveis, verifica Chart.js, renderização/rotação Three.js, salvamento/reabertura do visual, interações do feed e ausência de overflow em sete páginas a 360 e 390 px. As dependências da CDN são obtidas por HTTPS com TLS verificado e entregues ao navegador de teste, permitindo a execução em ambientes com proxy. As capturas ficam na pasta temporária `garagehub-screenshots` (ou no caminho de `SCREENSHOT_DIR`).
+O script usa automaticamente `chromium`/`google-chrome` do sistema; `BROWSER_PATH` permite indicar outro executável. Inicia um servidor e banco descartáveis, verifica Chart.js, renderização/rotação Three.js, salvamento/reabertura do visual, interações do feed e ausência de overflow em sete páginas a 360, 768 e 1280 px. As dependências da CDN são obtidas por HTTPS com TLS verificado e entregues ao navegador de teste, permitindo a execução em ambientes com proxy. As capturas ficam na pasta temporária `garagehub-screenshots` (ou no caminho de `SCREENSHOT_DIR`).
 
-## Limites da V0.0
+## Limites da V0.1
 
 - Three.js e Chart.js precisam de acesso à CDN. Se ela não carregar, a aplicação segue funcionando: o histórico está em tabela e o formulário do visual pode salvar opções. Sem WebGL, o carro 3D não é renderizado.
 - O visualizador é conceitual e genérico, sem modelos 3D de marcas reais. Fotos do seed são ilustrações.
 - O servidor `python run.py` é para uso local. A configuração de hospedagem inclui Gunicorn, cookies seguros em produção, HTTPS pelo provedor e disco persistente. Backups, migrações de futuras alterações de esquema e controles de abuso devem ser mantidos pelo operador. Recuperação de senha, confirmação de e-mail e moderação não fazem parte desta entrega.
 - Fora do escopo e não implementados: chat em tempo real, aplicativo mobile, pagamentos, modelos 3D de marcas reais, eventos e rotas de passeios.
 
-Não há pendências funcionais planejadas nos sete módulos da V0.0. Novas funcionalidades e preparação para produção ficam para uma próxima versão.
+A V0.1 mantém os dois modos funcionando, sem acrescentar dependências. O esquema do SQLite não mudou e não exige migração. A exportação preserva os endereços das páginas anteriores e mantém Perfil apontando para o mesmo perfil de demonstração em todas as páginas.
+
+Ficam fora desta versão: autenticação e sincronização reais no GitHub Pages, modelos 3D de marcas reais e as funcionalidades futuras acima. A demonstração representa amizades apenas no navegador; respostas de outros usuários são simuladas. As medições do seed são estimativas coerentes para demonstração, não resultados certificados de dinamômetro.
+
+O título, a descrição, as tags Open Graph/Twitter, a URL canônica, o favicon e a imagem de compartilhamento são exportados por página. `GARAGEHUB_SITE_URL` permite usar outro endereço de publicação. `sitemap.xml` e `robots.txt` acompanham a exportação. A imagem de compartilhamento é uma captura real da home gerada por `smoke_pages.py`; regenere a exportação depois desse teste para copiá-la para `docs/`.
+
+Os testes de navegador cobrem 360, 768 e 1280 px. A prévia também verifica persistência após recarga, formulários, foto de publicação, curtida, comentário, filtros, gráfico, estado 3D, redefinição, download PNG, texto escapado e erro de armazenamento sem falso sucesso.
+
+A verificação de acessibilidade avalia cores sólidas computadas, rótulos, alternativas de imagens e foco. Fundos com imagens e gradientes exigem também inspeção visual; esta verificação não substitui uma auditoria completa com leitores de tela.

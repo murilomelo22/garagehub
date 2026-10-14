@@ -52,6 +52,13 @@ def create_app(test_config=None):
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    from .presentation import brasilia, money_br, number_br, relative_time
+    app.jinja_env.filters.update(number_br=number_br, money_br=money_br, brasilia=brasilia, relative_time=relative_time)
+    app.config.setdefault("PREVIEW_MODE", False)
+
+    @app.context_processor
+    def presentation_context():
+        return {"preview_mode": app.config["PREVIEW_MODE"]}
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Entre na sua conta para continuar."
     login_manager.login_message_category = "info"
@@ -90,7 +97,7 @@ def create_app(test_config=None):
     def index():
         if current_user.is_authenticated:
             return redirect(url_for("social.feed"))
-        return render_template("landing.html", title="Sua paixão tem uma nova casa")
+        return render_template("landing.html", title="Projetos, histórias e comunidade", meta_description="GarageHub: sua garagem digital para acompanhar projetos, compartilhar evolução e conhecer a comunidade automotiva.")
 
     @app.get("/uploads/<filename>")
     def uploaded_file(filename):
@@ -164,7 +171,7 @@ def create_app(test_config=None):
 
         seed_database()
         click.echo(
-            "Seed concluído: 3 usuários e 5 carros de demonstração. Senha: GarageHub123!"
+            "Seed concluído: 3 usuários e 9 carros de demonstração. Senha: GarageHub123!"
         )
 
     with app.app_context():

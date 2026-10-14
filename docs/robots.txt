@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://murilomelo22.github.io/garagehub/sitemap.xml

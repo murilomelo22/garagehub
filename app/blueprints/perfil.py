@@ -9,6 +9,12 @@ from ..models import Follow, Friendship, User
 bp = Blueprint("perfil", __name__)
 
 
+@bp.get("/perfil")
+@login_required
+def me():
+    return redirect(url_for("perfil.public", username=current_user.username))
+
+
 @bp.get("/u/<username>")
 def public(username):
     user = db.first_or_404(db.select(User).where(User.username == username.lower()))

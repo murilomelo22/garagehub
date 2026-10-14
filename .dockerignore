@@ -12,3 +12,4 @@ test-results
 tests
 scripts
 *.png
+!app/static/img/social-card.png

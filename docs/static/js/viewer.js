@@ -1,4 +1,6 @@
 /* Carro conceitual: todas as peças são geometrias primitivas do Three.js. */
+(async () => {
+if (!document.getElementById("viewer-form")) return;
 const container = document.getElementById("car-viewer");
 const form = document.getElementById("viewer-form");
 const message = document.getElementById("viewer-message");
@@ -6,6 +8,14 @@ const feedback = document.getElementById("viewer-feedback");
 const initial = JSON.parse(
   document.getElementById("viewer-config").textContent,
 );
+const defaults = JSON.parse(document.getElementById("viewer-defaults").textContent);
+document.getElementById("reset-viewer")?.addEventListener("click", () => {
+  for (const [name, value] of Object.entries(defaults)) {
+    form.elements[name].value = name === "spoiler" ? (value ? "yes" : "no") : value;
+  }
+  form.dispatchEvent(new Event("input", { bubbles: true }));
+  feedback.textContent = "Controles redefinidos. Salve para manter esta configuração.";
+});
 
 // O salvamento também funciona quando WebGL não está disponível.
 form.addEventListener("submit", async (event) => {
@@ -14,6 +24,14 @@ form.addEventListener("submit", async (event) => {
   button.disabled = true;
   feedback.textContent = "Salvando…";
   try {
+    if (document.body.dataset.mode === "preview") {
+      const config = Object.fromEntries(new FormData(form));
+      config.wheel_size = Number(config.wheel_size);
+      config.spoiler = config.spoiler === "yes";
+      window.GaragePreview.saveViewer(config);
+      feedback.textContent = "Configuração salva somente neste navegador.";
+      return;
+    }
     const response = await fetch(form.action, {
       method: "POST",
       body: new FormData(form),
@@ -62,7 +80,7 @@ try {
   light.castShadow = true;
   light.shadow.mapSize.set(1024, 1024);
   scene.add(light);
-  const accent = new THREE.PointLight(0xff5a3d, 38);
+  const accent = new THREE.PointLight(0x517dbd, 38);
   accent.position.set(-4, 2.8, -3);
   scene.add(accent);
 
@@ -174,7 +192,7 @@ try {
   scene.add(stage);
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(3.95, 0.017, 8, 96),
-    new THREE.MeshBasicMaterial({ color: 0x713629 }),
+    new THREE.MeshBasicMaterial({ color: 0x244f91 }),
   );
   ring.rotation.x = Math.PI / 2;
   ring.position.y = 0.002;
@@ -184,7 +202,7 @@ try {
     paint.color.set(form.elements.paint_color.value);
     rims.color.set(form.elements.wheel_color.value);
     const size = Number(form.elements.wheel_size.value);
-    document.getElementById("wheel-size-value").value = size.toFixed(2) + "×";
+    document.getElementById("wheel-size-value").value = window.GarageHub.number(size) + "×";
     wheels.forEach((wheel) => {
       wheel.scale.setScalar(size);
       wheel.position.y = 0.52 * size;
@@ -196,6 +214,20 @@ try {
   }
   form.addEventListener("input", update);
   update();
+  const capture = document.getElementById("capture-viewer");
+  capture.disabled = false;
+  capture.addEventListener("click", () => {
+    renderer.render(scene, camera);
+    renderer.domElement.toBlob(blob => {
+      if (!blob) { feedback.textContent = "Não foi possível gerar a imagem. Tente novamente."; return; }
+      const link = document.createElement("a"), url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = "garagehub-modelo-conceitual.png";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      feedback.textContent = "Imagem PNG exportada: modelo conceitual, sem marcas reais.";
+    }, "image/png");
+  });
   const resize = new ResizeObserver(() => {
     const { width, height } = container.getBoundingClientRect();
     camera.aspect = width / height;
@@ -217,13 +249,15 @@ try {
     event.preventDefault();
     message.hidden = false;
     message.textContent =
-      "O contexto 3D foi interrompido. Atualize a página para tentar novamente.";
+      "O 3D foi interrompido. Atualize a página para tentar novamente.";
   });
   message.hidden = true;
   container.dataset.ready = "true";
 } catch (error) {
   message.textContent =
-    "O 3D precisa de WebGL e acesso à CDN. As opções continuam disponíveis para salvar.";
+    "O visualizador não está disponível neste navegador. As opções continuam disponíveis para salvar.";
   container.dataset.ready = "false";
   console.warn("Garage Studio indisponível:", error.message);
 }
+
+})();
