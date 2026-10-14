@@ -1,10 +1,10 @@
-# GarageHub · V0.1
+# GarageHub · V0.2
 
 Rede social automotiva com garagem digital, acompanhamento de evolução e personalização de um carro genérico em 3D. Nome provisório. Interface em português, tema escuro com acento azul escuro, fundo `#101114` e assinatura de cultura de garagem e navegação adaptada ao celular.
 
 ## Rodar localmente
 
-Requisitos: **Python 3.10+**, `pip`, navegador moderno. Não é necessário Node.js, Docker ou banco externo. Three.js, OrbitControls e Chart.js são carregados por HTTPS de `cdn.jsdelivr.net`; o 3D também requer WebGL habilitado no navegador.
+Requisitos: **Python 3.10+**, `pip`, navegador moderno. Não é necessário Node.js, Docker ou banco externo. Three.js e OrbitControls só são carregados por HTTPS de `cdn.jsdelivr.net` depois de **Ativar modelo 3D** ou mexer em um controle; o gráfico é SVG local; o 3D também requer WebGL habilitado no navegador.
 
 ```bash
 git clone https://github.com/murilomelo22/garagehub.git
@@ -47,9 +47,9 @@ A prévia em **GitHub Pages** permite navegar pelo GarageHub com dados de exempl
 3. Escolha a branch **main**, a pasta **/docs** e clique em **Save**.
 4. Aguarde a publicação do GitHub e abra [GarageHub](https://murilomelo22.github.io/garagehub/).
 
-O endereço fica disponível após a ativação. A pasta `docs/` contém 18 páginas, incluindo a demonstração e o modelo para carros criados no navegador. Clique em **Entrar como visitante** para usar o perfil de `lucas_gti`. Os botões Adicionar veículo, Editar carro, Registrar evolução e Novo projeto abrem formulários acessíveis, com salvamento local.
+O site publicado está em https://murilomelo22.github.io/garagehub/. A pasta `docs/` contém 55 páginas, incluindo a demonstração e o modelo para carros criados no navegador. Clique em **Entrar como visitante** para usar o perfil de `lucas_gti`. Os botões Adicionar veículo, Editar carro, Registrar evolução e Novo projeto abrem formulários acessíveis, com salvamento local.
 
-A prévia usa `localStorage` na chave `garagehub:preview:v0.1`. Carros, medições, modificações, perfil de exemplo, posts com foto, curtidas, comentários, seguidores e configurações 3D sobrevivem à recarga no mesmo navegador. Não há autenticação real no Pages. Os dados não são enviados ao Flask, não são sincronizados entre dispositivos e deixam de existir se o armazenamento do site for apagado. As fotos são reduzidas a até 1200 px e 800 KB codificados; se faltar espaço, a interface informa a falha e mantém os dados anteriores.
+A prévia usa `localStorage` na chave `garagehub:preview:v0.2`. A atualização importa os projetos e as alterações da V0.1 para a chave nova. **Restaurar dados de exemplo**, no cabeçalho de visitante, volta ao estado inicial após uma confirmação e não apaga outros dados da origem. Carros, medições, modificações, perfil de exemplo, posts com foto, curtidas, comentários, seguidores e configurações 3D sobrevivem à recarga no mesmo navegador. Não há autenticação real no Pages. Os dados não são enviados ao Flask, não são sincronizados entre dispositivos e deixam de existir se o armazenamento do site for apagado. As fotos são reduzidas a até 1200 px e 800 KB codificados; se faltar espaço, a interface informa a falha e mantém os dados anteriores.
 
 Os modais suportam teclado, Escape e devolução de foco. Os textos criados pelo visitante são escapados antes de entrar no HTML. A exportação usa somente registros fictícios; não publica e-mails, hashes de senha, sessões ou fotos reais.
 
@@ -110,13 +110,15 @@ python seed.py
 python -m flask --app run seed
 ```
 
-Cria **3 usuários e 9 carros**, fotos ilustrativas geradas localmente, medições, modificações, relações sociais e posts. Pode ser executado novamente sem duplicar os mesmos exemplos. Preserva os registros existentes. As medições reconhecidas como os números repetidos do seed antigo são corrigidas; históricos personalizados são preservados.
+Cria **12 perfis e 36 carros**, fotos ilustrativas geradas localmente, medições, modificações, relações sociais e posts. Pode ser executado novamente sem duplicar os mesmos exemplos. Preserva os registros existentes. As medições reconhecidas como os números repetidos do seed antigo são corrigidas; históricos personalizados são preservados.
 
 | Usuário | E-mail | Cidade | Carros |
 | --- | --- | --- | --- |
 | `lucas_gti` | `lucas_gti@example.test` | São Paulo, SP | Golf GTI, Jetta GLI e Polo GTS |
 | `ana_silva` | `ana_silva@example.test` | Curitiba, PR | Civic Si, MX-5 e GT86 |
 | `pedro_rs` | `pedro_rs@example.test` | Belo Horizonte, MG | Focus RS, Fiesta ST e Sandero RS |
+
+Outras garagens: `bia_abarth` (Porto Alegre), `rafa_turbo` (Rio de Janeiro), `marina_boxer` (Florianópolis), `caio_track` (Campinas), `julia_classicos` (Recife), `diego_jdm` (Brasília), `luiza_hatch` (Salvador), `thiago_sedan` (Goiânia) e `nina_estrada` (Fortaleza). Cada perfil tem bio e 2 a 5 carros; cada carro tem três medições coerentes. No total são 108 medições e 24 publicações, com interações variadas.
 
 Senha de todas as **contas de demonstração**: `GarageHub123!`. Use apenas em desenvolvimento. Sem seed, cadastre uma conta pelo botão da página inicial.
 
@@ -125,11 +127,11 @@ Senha de todas as **contas de demonstração**: `GarageHub123!`. Use apenas em d
 - Cadastro, login por usuário ou e-mail, logout e hash de senha com Werkzeug (scrypt).
 - Perfil com foto, bio e cidade. Página pública em `/u/<usuario>` com os carros do dono.
 - CRUD de veículos: marca, modelo, ano, cor, motor, câmbio e descrição. Galeria com envio e remoção de fotos; página pública por carro.
-- Histórico de potência em **cv**, torque em **Nm**, 0–100 km/h em **segundos**, máxima em **km/h** e consumo em **km/l**. A última medição por data aparece nos cards; o gráfico Chart.js usa o histórico completo em ordem de data, seletor de potência/torque/0–100/consumo, detalhes ao passar o cursor e variação desde a primeira medição. Medições podem ser removidas pelo dono.
+- Histórico de potência em **cv**, torque em **Nm**, 0–100 km/h em **segundos**, máxima em **km/h** e consumo em **km/l**. A última medição por data aparece nos cards; o gráfico SVG usa o histórico completo em ordem de data, seletor de potência/torque/0–100/consumo, detalhes ao passar o cursor e variação desde a primeira medição. Medições podem ser removidas pelo dono.
 - Modificações com nome, categoria, data e valor em reais, com duas casas decimais; podem ser removidas pelo dono.
-- Busca por usuário, cidade, marca ou modelo, com filtros combináveis de cidade e marca e estado Seguindo. Seguir/deixar de seguir e pedidos de amizade com aceitar, recusar, cancelar e remover. A página Amigos reúne amizades aceitas e pedidos pendentes.
+- Busca por usuário, cidade, marca ou modelo, com filtros combináveis de cidade e marca, ordenação por mais recentes/mais carros/mais curtidos e estado Seguindo. Seguir/deixar de seguir e pedidos de amizade com aceitar, recusar, cancelar e remover. A página Amigos reúne amizades aceitas e pedidos pendentes.
 - Feed com filtros **Todos**, **Seguindo** e marca na garagem do autor. No Flask, o padrão continua sendo Seguindo; na demonstração, Todos. Texto e/ou foto, curtir/descurtir, comentar, contadores e exclusão do próprio post. Horários relativos em Brasília e indicação completa ao passar sobre a data.
-- Garage Studio: salvar configuração, redefinir os controles e exportar a imagem em PNG. Carro genérico feito de caixas, cilindros e geometrias primitivas, com OrbitControls para girar e zoom. Pintura, cor e escala das rodas (0,80–1,30×), suspensão original/rebaixada e spoiler. O dono pode alterar e salvar; visitantes veem o visual salvo. As opções reaparecem ao abrir a página.
+- Garage Studio: salvar configuração, redefinir os controles e exportar a imagem em PNG. Carro genérico com carroceria extrudada, para-lamas abertos e rodas cilíndricas no eixo lateral, com OrbitControls para girar e zoom. Pintura, cor e tamanho das rodas (0,80–1,30×), suspensão original/rebaixada e spoiler. O dono pode alterar e salvar; visitantes veem o visual salvo. As opções reaparecem ao abrir a página.
 
 **Seguir e amizade são independentes:** aceitar uma amizade não adiciona automaticamente os posts ao feed. Siga a pessoa para acompanhar as publicações.
 
@@ -209,18 +211,22 @@ python scripts/build_pages.py
 python scripts/smoke_pages.py
 python scripts/build_pages.py
 python scripts/check_accessibility.py
+python scripts/verify_pages.py
+python scripts/capture_v02.py
 ```
 
-O script usa automaticamente `chromium`/`google-chrome` do sistema; `BROWSER_PATH` permite indicar outro executável. Inicia um servidor e banco descartáveis, verifica Chart.js, renderização/rotação Three.js, salvamento/reabertura do visual, interações do feed e ausência de overflow em sete páginas a 360, 768 e 1280 px. As dependências da CDN são obtidas por HTTPS com TLS verificado e entregues ao navegador de teste, permitindo a execução em ambientes com proxy. As capturas ficam na pasta temporária `garagehub-screenshots` (ou no caminho de `SCREENSHOT_DIR`).
+O script usa automaticamente `chromium`/`google-chrome` do sistema; `BROWSER_PATH` permite indicar outro executável. Inicia um servidor e banco descartáveis, verifica o gráfico SVG, renderização/rotação Three.js, salvamento/reabertura do visual, interações do feed e ausência de overflow em sete páginas a 360, 768 e 1280 px. As dependências da CDN são obtidas por HTTPS com TLS verificado e entregues ao navegador de teste, permitindo a execução em ambientes com proxy. As capturas ficam na pasta temporária `garagehub-screenshots` (ou no caminho de `SCREENSHOT_DIR`).
 
-## Limites da V0.1
+## Limites da V0.2
 
-- Three.js e Chart.js precisam de acesso à CDN. Se ela não carregar, a aplicação segue funcionando: o histórico está em tabela e o formulário do visual pode salvar opções. Sem WebGL, o carro 3D não é renderizado.
+- Three.js e OrbitControls precisam de acesso à CDN. Se ela não carregar, a aplicação segue funcionando: o histórico está em tabela e o formulário do visual pode salvar opções. Sem WebGL, o carro 3D não é renderizado.
 - O visualizador é conceitual e genérico, sem modelos 3D de marcas reais. Fotos do seed são ilustrações.
 - O servidor `python run.py` é para uso local. A configuração de hospedagem inclui Gunicorn, cookies seguros em produção, HTTPS pelo provedor e disco persistente. Backups, migrações de futuras alterações de esquema e controles de abuso devem ser mantidos pelo operador. Recuperação de senha, confirmação de e-mail e moderação não fazem parte desta entrega.
 - Fora do escopo e não implementados: chat em tempo real, aplicativo mobile, pagamentos, modelos 3D de marcas reais, eventos e rotas de passeios.
 
-A V0.1 mantém os dois modos funcionando, sem acrescentar dependências. O esquema do SQLite não mudou e não exige migração. A exportação preserva os endereços das páginas anteriores e mantém Perfil apontando para o mesmo perfil de demonstração em todas as páginas.
+A V0.2 mantém os dois modos funcionando, sem acrescentar dependências à aplicação. A home oferece Garage Studio e evolução do Golf GTI, com tooltips e pontos acessíveis pelo teclado. O SVG foi redesenhado em perfil lateral: o `viewBox` original estava correto, mas as rodas elípticas tinham tamanhos diferentes e o posicionamento absoluto cortava a ilustração. Agora as duas rodas são círculos iguais, a imagem mantém `1000/420`, `height:auto` e `preserveAspectRatio="xMidYMid meet"`. O 3D recebeu medidas de sedã esportivo, arcos abertos, rodas com eixo lateral e câmera ajustada à proporção do contêiner. Giro e aproximação também funcionam por botões com teclado.
+
+O build renderiza todas as rotas em um banco temporário, verifica os arquivos e só então substitui `docs/`. O manifesto contém todas as 55 páginas: home, acesso, feed, garagem, amigos, 12 perfis, 36 carros, protótipo local e erro 404. CSS, JS, módulos e o JSON da comunidade usam hashes do conteúdo na URL. `verify_pages.py` falha se faltar uma página/arquivo/âncora, se títulos ou descrições se repetirem, se um rodapé não tiver V0.2 ou se aparecer conteúdo antigo (`V0.0`, `V0.1`, faixa antiga e moeda sem separador). A expressão “dados de exemplo” só é aceita no botão de restauração explicitamente exigido; qualquer outra ocorrência em HTML falha o build. O 404 mantém o estilo do site, e páginas de carro incluem schema.org `Vehicle`. O esquema do SQLite não mudou e não exige migração. A exportação preserva os endereços das páginas anteriores e mantém Perfil apontando para o mesmo perfil de demonstração em todas as páginas.
 
 Ficam fora desta versão: autenticação e sincronização reais no GitHub Pages, modelos 3D de marcas reais e as funcionalidades futuras acima. A demonstração representa amizades apenas no navegador; respostas de outros usuários são simuladas. As medições do seed são estimativas coerentes para demonstração, não resultados certificados de dinamômetro.
 
@@ -229,3 +235,17 @@ O título, a descrição, as tags Open Graph/Twitter, a URL canônica, o favicon
 Os testes de navegador cobrem 360, 768 e 1280 px. A prévia também verifica persistência após recarga, formulários, foto de publicação, curtida, comentário, filtros, gráfico, estado 3D, redefinição, download PNG, texto escapado e erro de armazenamento sem falso sucesso.
 
 A verificação de acessibilidade avalia cores sólidas computadas, rótulos, alternativas de imagens e foco. Fundos com imagens e gradientes exigem também inspeção visual; esta verificação não substitui uma auditoria completa com leitores de tela.
+
+A automação `.github/workflows/checks.yml` verifica o artefato enviado, roda pytest e regenera toda a exportação em pushes e PRs.
+
+## Auditoria da V0.2
+
+As capturas ficam em `reports/screenshots/` (home e Studio em 360, 768 e 1280 px), e os resultados consolidados em `reports/V0.2.md`. Para repetir Lighthouse, use Chrome/Chromium e a ferramenta como utilitário de desenvolvimento, sem adicioná-la às dependências do site:
+
+```bash
+python -m http.server 8765 --bind 127.0.0.1 --directory docs
+# Em outro terminal:
+npx lighthouse@12.8.2 http://127.0.0.1:8765/index.html --only-categories=performance,accessibility,best-practices,seo --output=json --output=html --output-path=home-mobile
+```
+
+Os relatórios usam o perfil móvel padrão do Lighthouse, com simulação de rede e CPU. O estúdio começa como prévia leve e é auditado nesse estado inicial; renderização, giro, salvamento e PNG são verificados nos testes reais de navegador. As notas dependem do dispositivo, da rede e da hospedagem.

@@ -47,6 +47,7 @@ def feed():
     return render_template(
         "social/feed.html",
         title="Seu feed",
+        meta_description="Acompanhe novidades da comunidade automotiva, publique fotos dos seus projetos e troque experiências com outras garagens.",
         page=page,
         suggestions=suggestions,
         liked_ids=liked_ids,
@@ -144,8 +145,15 @@ def friends():
         query = query.where(User.city == city)
     if brand:
         query = query.where(User.vehicles.any(Vehicle.brand == brand))
+    order = request.args.get("order", "recent")
+    if order not in {"recent", "cars", "likes"}:
+        order = "recent"
+    # Subconsultas correlacionadas mantêm uma linha por perfil nas ordenações.
+    car_count = db.select(db.func.count(Vehicle.id)).where(Vehicle.user_id == User.id).correlate(User).scalar_subquery()
+    like_count = db.select(db.func.count(Like.post_id)).join(Post, Like.post_id == Post.id).where(Post.user_id == User.id).correlate(User).scalar_subquery()
+    ordering = {"recent": User.created_at.desc(), "cars": car_count.desc(), "likes": like_count.desc()}[order]
     page = db.paginate(
-        query.order_by(User.username), per_page=12, max_per_page=12, error_out=False
+        query.order_by(ordering, User.username), per_page=12, max_per_page=12, error_out=False
     )
     links = db.session.scalars(
         db.select(Friendship).where(
@@ -167,7 +175,9 @@ def friends():
     )
     return render_template(
         "social/friends.html",
-        title="Amigos & comunidade",
+        title="Amigos e comunidade",
+        meta_description="Encontre garagens por nome, cidade, marca ou modelo. Descubra novos perfis, siga projetos e faça conexões na comunidade GarageHub.",
+        order=order,
         q=q,
         page=page,
         friendships=friendships,

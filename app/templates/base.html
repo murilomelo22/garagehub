@@ -30,10 +30,10 @@
     <script src="{{ url_for('static', filename='js/format.js') }}" defer></script>
     {% block head %}{% endblock %}
   </head>
-  <body data-mode="{{ 'preview' if preview_mode else 'flask' }}"{% if vehicle is defined %} data-car-id="{{ vehicle.id }}"{% endif %}>
+  <body{% if home_demo|default(false) %} data-home-demo="true"{% endif %} data-mode="{{ 'preview' if preview_mode else 'flask' }}"{% if vehicle is defined %} data-car-id="{{ vehicle.id }}"{% endif %}>
     <a class="skip-link" href="#main">Pular para o conteúdo</a>
     <aside class="sidebar">
-      <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('car', 24) }}</span>Garage<span>Hub</span><small>0.1</small></a>
+      <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('car', 24) }}</span>Garage<span>Hub</span><small>0.2</small></a>
       <div class="sidebar-label">SUA COMUNIDADE AUTOMOTIVA</div>
       <nav aria-label="Navegação principal">
         {% set endpoint = request.endpoint or '' %}
@@ -70,6 +70,8 @@
     </aside>
     <div class="app-shell">
       <header class="topbar">
+        {% if request.endpoint == 'index' %}<span class="topbar-slogan">Projetos que conectam.</span>{% endif %}
+        {% if preview_mode %}<div class="visitor-status" data-visitor-status hidden><span>Você está como visitante</span><button type="button" class="text-button" data-restore-demo>Restaurar dados de exemplo</button></div>{% endif %}
         <form class="header-search"
               action="{{ url_for('social.friends') }}"
               method="get">
@@ -83,7 +85,7 @@
           <a class="header-avatar" aria-label="Abrir meu perfil"
              href="{{ url_for('perfil.public', username=current_user.username) }}">{{ avatar(current_user) }}</a>
         {% else %}
-          <a class="btn btn-quiet btn-small" href="{{ url_for('auth.login') }}">Entrar {{ icon('arrow', 16) }}</a>
+          <a class="btn btn-quiet btn-small" href="{{ url_for('auth.login') }}">{{ 'Entrar como visitante' if preview_mode else 'Entrar' }} {{ icon('arrow', 16) }}</a>
         {% endif %}
       </header>
       <main id="main" class="main-content">
@@ -98,7 +100,7 @@
         {% block content %}{% endblock %}
       </main>
       <footer class="footer">
-        <span>GARAGEHUB <b>© 2026</b></span><span>Projetos que conectam. <span class="orange">V0.1</span></span>
+        <span>GARAGEHUB <b>© 2026</b></span><span>Projetos que conectam. <span class="orange">V0.2</span></span>
       </footer>
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>

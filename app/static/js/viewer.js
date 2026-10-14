@@ -1,14 +1,21 @@
-/* Carro conceitual: todas as peças são geometrias primitivas do Three.js. */
+/* Modelo conceitual: perfil extrudado com para-lamas abertos e rodas no eixo lateral. */
 (async () => {
 if (!document.getElementById("viewer-form")) return;
 const container = document.getElementById("car-viewer");
 const form = document.getElementById("viewer-form");
 const message = document.getElementById("viewer-message");
 const feedback = document.getElementById("viewer-feedback");
-const initial = JSON.parse(
+let initial = JSON.parse(
   document.getElementById("viewer-config").textContent,
 );
 const defaults = JSON.parse(document.getElementById("viewer-defaults").textContent);
+const homeLocal = document.body.dataset.homeDemo === "true" && document.body.dataset.mode !== "preview";
+if (homeLocal) {
+  try {const saved=JSON.parse(localStorage.getItem("garagehub:studio-home:v0.2"));if(saved && /^#[\da-f]{6}$/i.test(saved.paint_color) && Number.isFinite(saved.wheel_size) && saved.wheel_size>=.8 && saved.wheel_size<=1.3) initial={...initial,...saved};} catch { /* Mantém os controles padrão se o armazenamento estiver indisponível. */ }
+  for (const [name,value] of Object.entries(initial)) form.elements[name].value=name==="spoiler"?(value?"yes":"no"):value;
+}
+const wheelCaption=()=>{document.getElementById("wheel-size-value").value=window.GarageHub.number(Number(form.elements.wheel_size.value))+"×";};
+form.addEventListener("input",wheelCaption);wheelCaption();
 document.getElementById("reset-viewer")?.addEventListener("click", () => {
   for (const [name, value] of Object.entries(defaults)) {
     form.elements[name].value = name === "spoiler" ? (value ? "yes" : "no") : value;
@@ -24,11 +31,12 @@ form.addEventListener("submit", async (event) => {
   button.disabled = true;
   feedback.textContent = "Salvando…";
   try {
-    if (document.body.dataset.mode === "preview") {
+    if (document.body.dataset.mode === "preview" || homeLocal) {
       const config = Object.fromEntries(new FormData(form));
       config.wheel_size = Number(config.wheel_size);
       config.spoiler = config.spoiler === "yes";
-      window.GaragePreview.saveViewer(config);
+      if (homeLocal) localStorage.setItem("garagehub:studio-home:v0.2",JSON.stringify(config));
+      else window.GaragePreview.saveViewer(config);
       feedback.textContent = "Configuração salva somente neste navegador.";
       return;
     }
@@ -52,6 +60,13 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
+// O motor 3D só é baixado ao ativar o modelo ou experimentar um controle.
+await new Promise(resolve=>{
+  const activate=()=>{message.textContent="Preparando o modelo 3D…";resolve();};
+  document.getElementById("activate-viewer").addEventListener("click",activate,{once:true});
+  form.addEventListener("input",activate,{once:true});
+  document.getElementById("activate-viewer").disabled=false;
+});
 try {
   const THREE = await import("three");
   const { OrbitControls } = await import(
@@ -60,12 +75,13 @@ try {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#121318");
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-  camera.position.set(7.5, 4.6, 7.5);
+  camera.position.set(6.5, 3.4, 6.7);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.domElement.setAttribute("role","img");renderer.domElement.setAttribute("aria-label","Carro conceitual 3D. Use os botões de giro e aproximação ou arraste para explorar.");
   container.prepend(renderer.domElement);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -127,71 +143,60 @@ try {
     parent.add(mesh);
     return mesh;
   }
-  box(body, [4.8, 0.65, 2.05], [0, 0, 0], paint);
-  box(body, [4.55, 0.17, 2.1], [0, -0.31, 0], dark);
-  box(body, [2.15, 0.74, 1.7], [-0.25, 0.63, 0], glass);
-  box(body, [2.18, 0.1, 1.72], [-0.25, 1.04, 0], paint);
-  box(body, [0.1, 0.73, 1.75], [-0.3, 0.63, 0], paint);
-  box(body, [1.35, 0.12, 1.94], [1.5, 0.39, 0], paint);
-  box(body, [0.1, 0.16, 0.55], [2.43, 0.12, -0.62], lamps);
-  box(body, [0.1, 0.16, 0.55], [2.43, 0.12, 0.62], lamps);
-  box(body, [0.1, 0.17, 0.6], [-2.43, 0.12, -0.61], rearLamps);
-  box(body, [0.1, 0.17, 0.6], [-2.43, 0.12, 0.61], rearLamps);
-  box(body, [0.06, 0.2, 0.85], [2.45, -0.16, 0], dark);
-  for (const side of [-1, 1]) {
-    box(body, [0.32, 0.16, 0.18], [0.54, 0.57, side * 1.05], paint);
-    box(body, [0.15, 0.055, 0.05], [-0.06, 0.14, side * 1.05], rims);
+  // Perfil lateral: 4,4 m de comprimento, 2,7 m entre eixos e arcos de 0,46 m.
+  const silhouette = new THREE.Shape();
+  silhouette.moveTo(-2.2,.16);silhouette.lineTo(-2.2,.55);silhouette.lineTo(-1.92,.68);
+  silhouette.lineTo(-1.18,.73);silhouette.lineTo(.65,.73);silhouette.lineTo(1.9,.62);silhouette.lineTo(2.2,.48);silhouette.lineTo(2.2,.16);
+  silhouette.lineTo(1.81,.10);
+  silhouette.absarc(1.35,.10,.46,0,Math.PI,false);
+  silhouette.lineTo(-.89,.10);silhouette.absarc(-1.35,.10,.46,0,Math.PI,false);
+  silhouette.lineTo(-2.2,.16);
+  const shellGeometry=new THREE.ExtrudeGeometry(silhouette,{depth:1.82,bevelEnabled:false,curveSegments:32});
+  shellGeometry.translate(0,0,-.91);
+  const shell=new THREE.Mesh(shellGeometry,paint);shell.castShadow=true;shell.receiveShadow=true;body.add(shell);
+  // Cabine afunilada: vidros acompanham as linhas do teto e do capô.
+  const cabin=new THREE.Shape();cabin.moveTo(-1.17,.75);cabin.lineTo(-.70,1.18);cabin.quadraticCurveTo(-.57,1.25,-.38,1.25);cabin.lineTo(.22,1.25);cabin.lineTo(.89,.75);cabin.closePath();
+  const cabinGeometry=new THREE.ExtrudeGeometry(cabin,{depth:1.48,bevelEnabled:false,curveSegments:16});cabinGeometry.translate(0,0,-.74);
+  const canopy=new THREE.Mesh(cabinGeometry,glass);canopy.castShadow=true;body.add(canopy);
+  box(body,[.66,.055,1.5],[-.10,1.25,0],paint);
+  for (const side of [-1,1]) {
+    const pillar=box(body,[.06,.47,.035],[-.12,.98,side*.757],paint);
+    pillar.rotation.z=-.06;
+    box(body,[.26,.10,.18],[.74,.83,side*.96],paint);
+    box(body,[.13,.03,.025],[.04,.62,side*.927],rims);
+    box(body,[1.24,.07,.07],[0,.12,side*.90],dark);
+    box(body,[.07,.13,.38],[2.19,.47,side*.55],lamps);
+    box(body,[.065,.13,.42],[-2.20,.49,side*.55],rearLamps);
   }
-  const spoiler = new THREE.Group();
-  body.add(spoiler);
-  box(spoiler, [0.35, 0.12, 2.25], [-2, 0.78, 0], paint);
-  for (const side of [-1, 1])
-    box(spoiler, [0.12, 0.4, 0.1], [-2, 0.52, side * 0.7], dark);
-  const wheels = [];
-  for (const x of [-1.52, 1.52])
-    for (const side of [-1, 1]) {
-      const wheel = new THREE.Group();
-      wheel.position.set(x, 0.52, side * 1.05);
-      scene.add(wheel);
-      const tire = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.52, 0.52, 0.28, 40),
-        rubber,
-      );
-      tire.rotation.x = Math.PI / 2;
-      tire.castShadow = true;
-      wheel.add(tire);
-      const rim = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.37, 0.37, 0.295, 32),
-        rims,
-      );
-      rim.rotation.x = Math.PI / 2;
-      wheel.add(rim);
-      for (let i = 0; i < 5; i++) {
-        const spoke = box(
-          wheel,
-          [0.06, 0.66, 0.035],
-          [0, 0, side * 0.16],
-          rims,
-        );
-        spoke.rotation.z = (i * Math.PI) / 5;
-      }
-      const hub = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.09, 0.09, 0.33, 16),
-        rims,
-      );
-      hub.rotation.x = Math.PI / 2;
-      wheel.add(hub);
-      wheels.push(wheel);
+  box(body,[.05,.13,.65],[2.21,.26,0],dark);
+  const spoiler=new THREE.Group();body.add(spoiler);
+  box(spoiler,[.28,.075,1.98],[-1.91,.95,0],paint);
+  for(const side of [-1,1]) box(spoiler,[.065,.25,.065],[-1.91,.80,side*.65],dark);
+  const wheels=[],rimFaces=[];
+  for(const x of [-1.35,1.35]) for(const side of [-1,1]) {
+    const wheel=new THREE.Group();wheel.position.set(x,.37,side*.90);scene.add(wheel);
+    const tire=new THREE.Mesh(new THREE.CylinderGeometry(.37,.37,.24,48),rubber);
+    tire.rotation.x=Math.PI/2;tire.castShadow=true;wheel.add(tire);
+    // Cilindro girado para z: sua face externa é perpendicular ao eixo lateral.
+    const face=new THREE.Group();face.position.z=side*.125;wheel.add(face);
+    const rim=new THREE.Mesh(new THREE.CylinderGeometry(.26,.26,.025,40),rims);rim.rotation.x=Math.PI/2;face.add(rim);
+    const inset=new THREE.Mesh(new THREE.CylinderGeometry(.21,.21,.027,40),dark);inset.rotation.x=Math.PI/2;inset.position.z=side*.003;face.add(inset);
+    for(let i=0;i<5;i++) {
+      const angle=i*Math.PI*2/5;
+      const spoke=box(face,[.045,.20,.018],[Math.sin(angle)*.11,Math.cos(angle)*.11,side*.022],rims);spoke.rotation.z=-angle;
     }
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.056,.056,.05,24),rims);hub.rotation.x=Math.PI/2;hub.position.z=side*.02;face.add(hub);
+    wheels.push(wheel);rimFaces.push(face);
+  }
   const stage = new THREE.Mesh(
-    new THREE.CylinderGeometry(4, 4, 0.12, 96),
+    new THREE.CylinderGeometry(3.1, 3.1, 0.12, 64),
     new THREE.MeshStandardMaterial({ color: 0x22232a, roughness: 0.7 }),
   );
   stage.position.y = -0.07;
   stage.receiveShadow = true;
   scene.add(stage);
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(3.95, 0.017, 8, 96),
+    new THREE.TorusGeometry(3.06, 0.017, 8, 64),
     new THREE.MeshBasicMaterial({ color: 0x244f91 }),
   );
   ring.rotation.x = Math.PI / 2;
@@ -203,13 +208,10 @@ try {
     rims.color.set(form.elements.wheel_color.value);
     const size = Number(form.elements.wheel_size.value);
     document.getElementById("wheel-size-value").value = window.GarageHub.number(size) + "×";
-    wheels.forEach((wheel) => {
-      wheel.scale.setScalar(size);
-      wheel.position.y = 0.52 * size;
-    });
-    body.position.y =
-      0.52 * size +
-      (form.elements.suspension.value === "lowered" ? 0.25 : 0.48);
+    const tireScale=1+(size-1)*.25;
+    wheels.forEach(wheel=>{wheel.scale.setScalar(tireScale);wheel.position.y=.37*tireScale;});
+    rimFaces.forEach(face=>{face.scale.x=size;face.scale.y=size;});
+    body.position.y=.37*tireScale-.10+(form.elements.suspension.value==="lowered"?0:.08);
     spoiler.visible = form.elements.spoiler.value === "yes";
   }
   form.addEventListener("input", update);
@@ -231,6 +233,12 @@ try {
   const resize = new ResizeObserver(() => {
     const { width, height } = container.getBoundingClientRect();
     camera.aspect = width / height;
+    // Ajusta a distância à proporção do contêiner, com margem em todas as larguras.
+    const verticalFov=camera.fov*Math.PI/180,horizontalFov=2*Math.atan(Math.tan(verticalFov/2)*camera.aspect);
+    const distance=Math.max(6.3,3.05/Math.sin(Math.min(verticalFov,horizontalFov)/2));
+    const direction=new THREE.Vector3().subVectors(camera.position,controls.target).normalize();
+    camera.position.copy(controls.target).addScaledVector(direction,distance);
+    controls.minDistance=distance*.85;controls.maxDistance=distance*1.8;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height);
   });
@@ -239,8 +247,10 @@ try {
   new IntersectionObserver((entries) => {
     visible = entries[0].isIntersecting;
   }).observe(container);
-  renderer.setAnimationLoop(() => {
-    if (visible && !document.hidden) {
+  let lastFrame=0;
+  renderer.setAnimationLoop(now => {
+    if (visible && !document.hidden && now-lastFrame>32) {
+      lastFrame=now;
       controls.update();
       renderer.render(scene, camera);
     }
@@ -251,6 +261,13 @@ try {
     message.textContent =
       "O 3D foi interrompido. Atualize a página para tentar novamente.";
   });
+  document.querySelector(".viewer-tools").hidden=false;
+  document.querySelectorAll("[data-view-control]").forEach(button=>button.addEventListener("click",()=>{
+    const vector=camera.position.clone().sub(controls.target),action=button.dataset.viewControl;
+    if(action==="left"||action==="right")vector.applyAxisAngle(new THREE.Vector3(0,1,0),action==="left"?-.18:.18);
+    else vector.multiplyScalar(action==="zoom-in"?.92:1.08);
+    vector.clampLength(controls.minDistance,controls.maxDistance);camera.position.copy(controls.target).add(vector);controls.update();
+  }));
   message.hidden = true;
   container.dataset.ready = "true";
 } catch (error) {

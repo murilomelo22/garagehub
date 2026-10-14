@@ -514,7 +514,7 @@ def test_seed_is_repeatable_and_public_pages_render(app, client):
     with app.app_context():
         seed_database()
         seed_database()
-        for model, count in [(User, 3), (Vehicle, 9), (Post, 6), (CarStats, 27)]:
+        for model, count in [(User, 12), (Vehicle, 36), (Post, 24), (CarStats, 108)]:
             assert (
                 db.session.scalar(db.select(db.func.count()).select_from(model))
                 == count

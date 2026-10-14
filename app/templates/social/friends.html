@@ -3,7 +3,7 @@
   <div class="page-heading">
     <div>
       <span class="eyebrow">A MESMA PAIXÃO, NOVAS CONEXÕES</span>
-      <h1>Amigos & comunidade</h1>
+      <h1>Amigos e comunidade</h1>
       <p>Encontre pessoas que entendem seu projeto.</p>
     </div>
   </div>
@@ -54,6 +54,7 @@
     <input type="hidden" name="q" value="{{ q }}">
     <label>Cidade<select name="city"><option value="">Todas as cidades</option>{% for item in cities %}<option value="{{ item }}" {{ 'selected' if item==city }}>{{ item }}</option>{% endfor %}</select></label>
     <label>Marca<select name="brand"><option value="">Todas as marcas</option>{% for item in brands %}<option value="{{ item }}" {{ 'selected' if item==brand }}>{{ item }}</option>{% endfor %}</select></label>
+    <label>Ordenar por<select name="order"><option value="recent" {{ 'selected' if order=='recent' }}>Mais recentes</option><option value="cars" {{ 'selected' if order=='cars' }}>Mais carros</option><option value="likes" {{ 'selected' if order=='likes' }}>Mais curtidos</option></select></label>
     <button class="btn btn-secondary">Filtrar</button>
   </form>
   <div class="people-grid">
@@ -85,12 +86,12 @@
   <nav class="pagination" aria-label="Páginas da comunidade">
     {% if page.has_prev %}
       <a class="btn btn-secondary"
-         href="{{ url_for('social.friends',q=q,city=city,brand=brand,page=page.prev_num) }}">Anterior</a>
+         href="{{ url_for('social.friends',q=q,city=city,brand=brand,order=order,page=page.prev_num) }}">Anterior</a>
     {% endif %}
     <span>{{ page.page }} / {{ page.pages }}</span>
     {% if page.has_next %}
       <a class="btn btn-secondary"
-         href="{{ url_for('social.friends',q=q,city=city,brand=brand,page=page.next_num) }}">Próxima</a>
+         href="{{ url_for('social.friends',q=q,city=city,brand=brand,order=order,page=page.next_num) }}">Próxima</a>
     {% endif %}
   </nav>
 {% endif %}

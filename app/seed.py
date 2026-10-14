@@ -84,21 +84,30 @@ def demo_photo(color, title):
         font=font,
     )
     filename = f"{uuid4().hex}.jpg"
-    image.save(Path(current_app.config["UPLOAD_FOLDER"]) / filename, quality=90)
+    image.save(Path(current_app.config["UPLOAD_FOLDER"]) / filename, quality=82, optimize=True)
     return filename
 
 
 def seed_database():
     """Adiciona exemplos repetíveis; preserva carros e medições editados pelo usuário."""
     users = []
-    for username, city, bio in [
+    for user_index, (username, city, bio) in enumerate([
         ("lucas_gti", "São Paulo, SP", "Projetos turbo para o dia a dia. Cada modificação tem uma história."),
         ("ana_silva", "Curitiba, PR", "Café, estrada e motores aspirados. Um detalhe de cada vez."),
         ("pedro_rs", "Belo Horizonte, MG", "Da revisão aos pneus: construindo uma garagem para dirigir."),
-    ]:
+        ("bia_abarth", "Porto Alegre, RS", "Pequenos esportivos, grandes viagens. Cuidando da manutenção antes de buscar potência."),
+        ("rafa_turbo", "Rio de Janeiro, RJ", "Da oficina à estrada: torque para o uso diário, sem abrir mão da confiabilidade."),
+        ("marina_boxer", "Florianópolis, SC", "Motores boxer, curvas de serra e fotografias dos caminhos que cada carro abre."),
+        ("caio_track", "Campinas, SP", "Freios, pneus e medições. Minha garagem mistura projetos de rua e dias de pista."),
+        ("julia_classicos", "Recife, PE", "Restaurando memórias com peças bem escolhidas. Originalidade e cuidado em cada detalhe."),
+        ("diego_jdm", "Brasília, DF", "Engenharia japonesa e projetos aspirados. Primeiro revisão, depois a próxima melhoria."),
+        ("luiza_hatch", "Salvador, BA", "Hatches leves para a cidade e a estrada. A melhor modificação é dirigir mais."),
+        ("thiago_sedan", "Goiânia, GO", "Sedãs discretos, conforto e resposta. Guardando os números de cada etapa do projeto."),
+        ("nina_estrada", "Fortaleza, CE", "Garagem para viajar: consumo medido, revisões em dia e histórias pelo litoral."),
+    ]):
         user = db.session.scalar(db.select(User).filter_by(username=username))
         if not user:
-            user = User(username=username, email=f"{username}@example.test", city=city, bio=bio)
+            user = User(username=username, email=f"{username}@example.test", city=city, bio=bio, created_at=datetime.now(timezone.utc).replace(tzinfo=None)-timedelta(days=240-user_index*17))
             user.set_password("GarageHub123!")
             db.session.add(user)
             db.session.flush()
@@ -115,6 +124,43 @@ def seed_database():
         (2,"Ford","Fiesta ST",2016,"Vermelho","1.6 EcoBoost","Manual 6 marchas","#bb3832",182,240,6.9,223,12.0,3,30),
         (2,"Renault","Sandero RS",2019,"Preto","2.0 16V","Manual 6 marchas","#24272d",150,205,8.0,202,10.8,2,8),
     ]
+    catalogue = [
+        ("Fiat","500 Abarth",2015,160,230,7.4,211,11.5,"1.4 turbo",2,22),
+        ("Mini","Cooper S",2019,192,280,6.8,235,12.1,"2.0 turbo",3,28),
+        ("Audi","A3",2018,220,350,6.8,245,12.0,"2.0 TFSI",3,32),
+        ("Chevrolet","Cruze",2020,153,240,9.0,214,12.5,"1.4 turbo",2,20),
+        ("Peugeot","208 GT",2017,173,240,7.6,222,12.0,"1.6 THP",3,24),
+        ("Subaru","WRX",2016,270,350,5.8,240,9.0,"2.0 boxer turbo",3,32),
+        ("Subaru","BRZ",2018,200,205,7.6,226,12.2,"2.0 boxer",2,8),
+        ("BMW","320i",2018,184,270,7.3,235,12.0,"2.0 turbo",3,35),
+        ("Renault","Clio RS",2014,200,240,6.7,230,11.0,"1.6 turbo",3,25),
+        ("Volkswagen","Up TSI",2018,105,165,9.3,182,14.5,"1.0 TSI",1,16),
+        ("Honda","Fit",2015,116,150,11.2,175,13.7,"1.5 i-VTEC",1,4),
+        ("Volkswagen","Gol GTI",1994,120,183,9.9,185,10.5,"2.0 8V",1,4),
+        ("Chevrolet","Opala",1992,121,280,12.0,170,6.8,"4.1 seis cilindros",2,5),
+        ("Nissan","Sentra",2019,140,196,10.1,190,12.5,"2.0 16V",1,5),
+        ("Mitsubishi","Lancer",2015,160,197,10.2,200,11.8,"2.0 16V",2,6),
+        ("Suzuki","Swift Sport",2015,142,167,8.7,195,13.0,"1.6 16V",2,5),
+        ("Hyundai","HB20",2022,120,172,10.0,190,14.0,"1.0 turbo",1,12),
+        ("Ford","Ka",2019,136,158,9.6,187,13.2,"1.5 12V",1,4),
+        ("Toyota","Corolla",2021,177,210,9.2,199,13.0,"2.0 16V",2,6),
+        ("Nissan","Versa",2021,114,156,11.7,185,14.1,"1.6 16V",1,4),
+        ("Honda","City",2022,126,155,10.5,190,14.5,"1.5 i-VTEC",1,4),
+        ("Hyundai","i30",2012,145,186,10.6,205,11.0,"2.0 16V",2,5),
+        ("Kia","Cerato",2018,128,157,11.0,190,12.2,"1.6 16V",1,4),
+        ("Renault","Megane RS",2014,265,360,6.0,254,10.0,"2.0 turbo",3,30),
+        ("Fiat","Punto T-Jet",2015,152,207,8.3,203,10.9,"1.4 turbo",2,22),
+        ("Peugeot","308",2018,165,240,8.5,215,12.4,"1.6 THP",2,24),
+        ("Citroën","C4 Lounge",2019,165,240,8.6,215,12.0,"1.6 THP",2,24),
+    ]
+    cursor = 0
+    palette = [("Vermelho","#c94432"),("Cinza","#767d89"),("Azul","#244f91"),("Branco","#c8c9c6"),("Preto","#24272d")]
+    for owner, count in zip(range(3,12), [2,3,4,5,2,3,4,2,2]):
+        for _ in range(count):
+            brand,model,year,power,torque,acceleration,speed,consumption,engine,small_gain,big_gain = catalogue[cursor]
+            color,paint=palette[cursor%len(palette)]
+            examples.append((owner,brand,model,year,color,engine,"Manual 6 marchas" if cursor%2 else "Automático",paint,power,torque,acceleration,speed,consumption,small_gain,big_gain))
+            cursor += 1
     first_cars = {}
     today = date.today()
     for index, example in enumerate(examples):
@@ -165,6 +211,12 @@ def seed_database():
         (1,0.8,"Manhã de revisão no MX-5: óleo, alinhamento e um bom café. O próximo projeto é o GT86."),
         (2,74,"O Fiesta ST ganhou pneus novos. A diferença nas curvas vale mais que qualquer número."),
     ]
+    for owner in range(3,12):
+        car,_ = first_cars[owner]
+        examples_posts.extend([
+            (owner, 3+owner*5, f"Revisão concluída no {car.model}: alinhamento, pneus e fluidos conferidos. A próxima medição vem depois de alguns dias de uso."),
+            (owner, 30+owner*9, f"Primeira saída de estrada com o {car.model}. Registrei consumo e resposta do motor para comparar com a próxima etapa. Como vocês acompanham a evolução?"),
+        ])
     for index,(owner,hours,content) in enumerate(examples_posts):
         post=db.session.scalar(db.select(Post).filter_by(user_id=users[owner].id,text=content))
         if not post:
@@ -172,12 +224,12 @@ def seed_database():
             post=Post(author=users[owner],text=content,photo=demo_photo(paint,car.title),created_at=now-timedelta(hours=hours))
             db.session.add(post)
             db.session.flush()
-        for offset in range(1+index%3):
-            other = (owner+offset+1)%3
+        for offset in range(1+index%3 if index<6 else 2+index%7):
+            other = (owner+offset+1)%(3 if index<6 else len(users))
             if not db.session.get(Like,(users[other].id,post.id)):
                 db.session.add(Like(user_id=users[other].id,post_id=post.id))
         for offset in range(1+index%3):
-            author=users[(owner+offset+1)%3]
+            author=users[(owner+offset+1)%(3 if index<6 else len(users))]
             content_comment=["Que projeto bem cuidado! Como ficou o uso diário?","Gostei das escolhas. Qual foi a última medição?","Belo resultado! Vamos marcar um encontro de garagens."][(index+offset)%3]
             if not db.session.scalar(db.select(Comment).filter_by(post_id=post.id,user_id=author.id,text=content_comment)):
                 db.session.add(Comment(post=post,author=author,text=content_comment,created_at=post.created_at+timedelta(minutes=8+offset*11)))

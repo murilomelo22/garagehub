@@ -78,7 +78,7 @@ def run():
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 assert page.goto(base).status == 200
                 assert page.get_by_role(
-                    "heading", name="Sua paixão merece uma garagem."
+                    "heading", name="Seu projeto merece uma garagem."
                 ).is_visible()
                 page.goto(base + "/auth/login")
                 page.get_by_label("Usuário ou e-mail").fill("lucas_gti")
@@ -101,9 +101,10 @@ def run():
                 page.goto(base + "/garagem/")
                 assert page.locator(".car-card").count() == 3
                 page.locator(".car-card").last.click()
+                page.locator("#activate-viewer").click()
                 page.wait_for_selector('#car-viewer[data-ready="true"]', timeout=60000)
                 page.wait_for_function(
-                    "typeof Chart !== 'undefined' && Chart.getChart(document.getElementById('power-chart')) !== undefined"
+                    "document.getElementById('power-chart').dataset.ready === 'true'"
                 )
                 assert page.locator("#viewer-message").is_hidden()
                 # A rotação deve mudar os pixels efetivamente desenhados.
@@ -133,6 +134,7 @@ def run():
                     "document.getElementById('viewer-feedback').textContent.includes('Visual salvo')"
                 )
                 page.reload()
+                page.locator("#activate-viewer").click()
                 page.wait_for_selector('#car-viewer[data-ready="true"]', timeout=60000)
                 assert (
                     page.locator('input[name="paint_color"]').input_value() == "#1255aa"
@@ -183,7 +185,7 @@ def run():
                 assert not errors, errors
                 browser.close()
                 print(
-                    "Navegador OK: login, post, curtida, busca, Chart.js, Three.js, rotação, persistência 3D e 7 telas em 360/768/1280 px."
+                    "Navegador OK: login, post, curtida, busca, gráfico SVG, Three.js, rotação, persistência 3D e 7 telas em 360/768/1280 px."
                 )
                 print(f"Capturas: {screenshots}")
                 print(f"Arquivos CDN verificados por HTTPS: {len(cdn_cache)}")

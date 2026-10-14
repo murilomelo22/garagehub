@@ -1,0 +1,5 @@
+<script id="power-data" type="application/json">{{ chart|tojson }}</script>
+<script id="viewer-config" type="application/json">{{ viewer_config|tojson }}</script>
+<script id="viewer-defaults" type="application/json">{{ viewer_defaults|tojson }}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script src="{{ url_for('static',filename='js/widgets.js') }}" data-viewer-src="{{ url_for('static',filename='js/viewer.js') }}" data-chart-src="{{ url_for('static',filename='js/chart.js') }}" defer></script>

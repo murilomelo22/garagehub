@@ -34,6 +34,7 @@ def public(username):
     return render_template(
         "perfil/public.html",
         title=f"Garagem de @{user.username}",
+        meta_description=f"{user.username}, de {user.city or 'uma garagem brasileira'}: {user.bio[:100]} Explore os {len(user.vehicles)} projetos desta garagem.",
         user=user,
         following=following,
         friendship=friendship,

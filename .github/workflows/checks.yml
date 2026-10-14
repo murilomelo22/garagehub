@@ -1,0 +1,22 @@
+name: Verificar GarageHub
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Instalar dependências de teste
+        run: python -m pip install -r requirements-dev.txt
+      - name: Verificar artefato enviado
+        run: python scripts/verify_pages.py
+      - name: Testar versão Flask e regressões da exportação
+        run: python -m pytest -q
+      - name: Regenerar todas as páginas e verificar o build
+        run: python scripts/build_pages.py

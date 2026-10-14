@@ -1,0 +1,70 @@
+  <section id="visualizador" class="panel viewer-section">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow">IMAGINE O PRÓXIMO PASSO</span>
+        <h2>
+          {{ icon('cube', 23) }} Garage Studio <span class="tag">3D</span>
+        </h2>
+      </div>
+      <span class="muted">Modelo genérico · arraste para girar</span>
+    </div>
+    <div class="viewer-layout">
+      <div id="car-viewer" role="region" aria-label="Visualizador 3D de carro genérico, sem correspondência com marcas reais">
+        <div class="viewer-message" id="viewer-message"><img class="studio-poster" src="{{ url_for('static',filename='img/car.svg') }}" alt="Perfil lateral de um esportivo conceitual vermelho" width="1000" height="420"><button type="button" class="btn btn-secondary" id="activate-viewer" disabled>Ativar modelo 3D</button><span>Experimente a pintura, as rodas e a suspensão.</span></div>
+        <div class="viewer-tools" hidden><button type="button" data-view-control="left" aria-label="Girar carro para a esquerda">↶</button><button type="button" data-view-control="right" aria-label="Girar carro para a direita">↷</button><button type="button" data-view-control="zoom-in" aria-label="Aproximar carro">+</button><button type="button" data-view-control="zoom-out" aria-label="Afastar carro">−</button></div><span class="viewer-caption">GIRE / APROXIME / EXPLORE</span>
+      </div>
+      <form method="post"
+            action="{{ '#' if home_demo|default(false) else url_for('visualizador.save',vehicle_id=vehicle.id) }}"
+            id="viewer-form"
+            class="viewer-controls">
+        {{ csrf_field() }}
+        <label>
+          Pintura<input type="color"
+       name="paint_color"
+       value="{{ viewer_config.paint_color }}"
+       {{ 'disabled' if not is_owner }}>
+        </label>
+        <label>
+          Cor das rodas<input type="color"
+       name="wheel_color"
+       value="{{ viewer_config.wheel_color }}"
+       {{ 'disabled' if not is_owner }}>
+        </label>
+        <label for="wheel-size">
+          Tamanho das rodas <output id="wheel-size-value">{{ viewer_config.wheel_size|number_br }}</output><input type="range"
+       id="wheel-size"
+       name="wheel_size"
+       min="0.8"
+       max="1.3"
+       step="0.05"
+       value="{{ viewer_config.wheel_size }}"
+       {{ 'disabled' if not is_owner }}>
+        </label>
+        <label>
+          Suspensão<select name="suspension" {{ 'disabled' if not is_owner }}><option value="original"
+        {{ 'selected' if viewer_config.suspension == 'original' }}>Original
+        </option>
+        <option value="lowered"
+                {{ 'selected' if viewer_config.suspension == 'lowered' }}>Rebaixado
+        </option>
+      </select>
+    </label>
+    <label>
+      Aerofólio<select name="spoiler" {{ 'disabled' if not is_owner }}><option value="no" {{ 'selected' if not viewer_config.spoiler }}>Sem aerofólio
+    </option>
+    <option value="yes" {{ 'selected' if viewer_config.spoiler }}>Com aerofólio
+    </option>
+  </select>
+</label>
+{% if is_owner %}
+  <button class="btn btn-primary full" id="save-viewer">Salvar configuração {{ icon('check', 16) }}</button>
+  <button type="button" class="btn btn-secondary full" id="reset-viewer">Redefinir</button>
+{% else %}
+  <p class="muted">Visual criado por {{ vehicle.owner.username }}.</p>
+{% endif %}
+<button type="button" class="btn btn-secondary full" id="capture-viewer" disabled>Exportar imagem PNG</button>
+<p id="viewer-feedback" aria-live="polite"></p>
+<small>Uma representação conceitual, sem correspondência com modelos de marcas reais.</small>
+</form>
+</div>
+</section>

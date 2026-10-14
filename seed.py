@@ -8,5 +8,5 @@ if __name__ == "__main__":
     with app.app_context():
         seed_database()
     print(
-        "Seed concluído. Usuários: lucas_gti, ana_silva, pedro_rs. Senha de demonstração: GarageHub123!"
+        "Seed concluído: 12 perfis e 36 carros. Usuário principal: lucas_gti. Senha de demonstração: GarageHub123!"
     )

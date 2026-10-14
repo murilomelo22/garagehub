@@ -97,7 +97,13 @@ def create_app(test_config=None):
     def index():
         if current_user.is_authenticated:
             return redirect(url_for("social.feed"))
-        return render_template("landing.html", title="Projetos, histórias e comunidade", meta_description="GarageHub: sua garagem digital para acompanhar projetos, compartilhar evolução e conhecer a comunidade automotiva.")
+        from datetime import date, timedelta
+        from .blueprints.visualizador import DEFAULT_CONFIG
+        today = date.today()
+        chart = {"labels": [(today-timedelta(days=days)).isoformat() for days in (150,90,15)],
+                 "power": [230,233,268], "torque": [350,355.2,416.5], "zero_to_hundred": [6.5,6.44,5.83], "consumption": [10.2,10.19,10.07]}
+        config = DEFAULT_CONFIG | {"paint_color":"#c94432", "wheel_size":1.0, "suspension":"lowered"}
+        return render_template("landing.html", home_demo=True, chart=chart, viewer_config=config, viewer_defaults=config, title="Projetos, histórias e comunidade", meta_description="GarageHub: sua garagem digital para acompanhar projetos, compartilhar evolução e conhecer a comunidade automotiva.")
 
     @app.get("/uploads/<filename>")
     def uploaded_file(filename):
@@ -171,7 +177,7 @@ def create_app(test_config=None):
 
         seed_database()
         click.echo(
-            "Seed concluído: 3 usuários e 9 carros de demonstração. Senha: GarageHub123!"
+            "Seed concluído: 12 perfis e 36 carros de demonstração. Senha: GarageHub123!"
         )
 
     with app.app_context():

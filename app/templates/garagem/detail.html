@@ -1,5 +1,6 @@
 {% extends 'base.html' %}{% from 'macros.html' import csrf_field, icon, avatar %}
 {% set is_owner = preview_mode or (current_user.is_authenticated and current_user.id == vehicle.user_id) %}
+{% block head %}<script type="application/ld+json">{{ vehicle_schema|tojson }}</script>{% endblock %}
 {% block content %}
   <a class="back-link"
      href="{{ url_for('perfil.public',username=vehicle.owner.username) }}">← Garagem de {{ vehicle.owner.username }}</a>
@@ -67,9 +68,7 @@
       <p id="metric-change" class="metric-change" aria-live="polite"></p>
       {% if vehicle.stats %}
         <div class="chart-container">
-          <canvas id="power-chart"
-                  aria-label="Gráfico de evolução de potência"
-                  role="img"></canvas>
+          <div id="power-chart" role="group" aria-label="Gráfico de evolução de potência"></div>
         </div>
         <p class="muted chart-fallback" hidden>
           O gráfico está indisponível. Consulte o histórico completo abaixo.
@@ -126,76 +125,7 @@
       </div>
     </section>
   </div>
-  <section id="visualizador" class="panel viewer-section">
-    <div class="section-heading">
-      <div>
-        <span class="eyebrow">IMAGINE O PRÓXIMO PASSO</span>
-        <h2>
-          {{ icon('cube', 23) }} Garage Studio <span class="tag">3D</span>
-        </h2>
-      </div>
-      <span class="muted">Modelo genérico · arraste para girar</span>
-    </div>
-    <div class="viewer-layout">
-      <div id="car-viewer" role="img" aria-label="Visualizador 3D de carro genérico, sem correspondência com marcas reais">
-        <div class="viewer-message" id="viewer-message">Preparando sua garagem 3D…</div>
-        <span class="viewer-caption">GIRE / APROXIME / EXPLORE</span>
-      </div>
-      <form method="post"
-            action="{{ url_for('visualizador.save',vehicle_id=vehicle.id) }}"
-            id="viewer-form"
-            class="viewer-controls">
-        {{ csrf_field() }}
-        <label>
-          Pintura<input type="color"
-       name="paint_color"
-       value="{{ viewer_config.paint_color }}"
-       {{ 'disabled' if not is_owner }}>
-        </label>
-        <label>
-          Cor das rodas<input type="color"
-       name="wheel_color"
-       value="{{ viewer_config.wheel_color }}"
-       {{ 'disabled' if not is_owner }}>
-        </label>
-        <label for="wheel-size">
-          Tamanho das rodas <output id="wheel-size-value">{{ viewer_config.wheel_size }}</output><input type="range"
-       id="wheel-size"
-       name="wheel_size"
-       min="0.8"
-       max="1.3"
-       step="0.05"
-       value="{{ viewer_config.wheel_size }}"
-       {{ 'disabled' if not is_owner }}>
-        </label>
-        <label>
-          Suspensão<select name="suspension" {{ 'disabled' if not is_owner }}><option value="original"
-        {{ 'selected' if viewer_config.suspension == 'original' }}>Original
-        </option>
-        <option value="lowered"
-                {{ 'selected' if viewer_config.suspension == 'lowered' }}>Rebaixado
-        </option>
-      </select>
-    </label>
-    <label>
-      Aerofólio<select name="spoiler" {{ 'disabled' if not is_owner }}><option value="no" {{ 'selected' if not viewer_config.spoiler }}>Sem aerofólio
-    </option>
-    <option value="yes" {{ 'selected' if viewer_config.spoiler }}>Com aerofólio
-    </option>
-  </select>
-</label>
-{% if is_owner %}
-  <button class="btn btn-primary full" id="save-viewer">Salvar configuração {{ icon('check', 16) }}</button>
-  <button type="button" class="btn btn-secondary full" id="reset-viewer">Redefinir</button>
-{% else %}
-  <p class="muted">Visual criado por {{ vehicle.owner.username }}.</p>
-{% endif %}
-<button type="button" class="btn btn-secondary full" id="capture-viewer" disabled>Exportar imagem PNG</button>
-<p id="viewer-feedback" aria-live="polite"></p>
-<small>Uma representação conceitual, sem correspondência com modelos de marcas reais.</small>
-</form>
-</div>
-</section>
+  {% include 'widgets/studio.html' %}
 {% if is_owner %}
   <form class="danger-zone"
         method="post"
@@ -205,20 +135,6 @@
     <button class="btn btn-danger btn-small">Excluir veículo</button>
   </form>
 {% endif %}
+
 {% endblock %}
-{% block scripts %}
-  <script id="power-data" type="application/json">{{ chart|tojson }}</script>
-  <script id="viewer-config" type="application/json">{{ viewer_config|tojson }}</script>
-  <script id="viewer-defaults" type="application/json">{{ viewer_defaults|tojson }}</script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer></script>
-  <script src="{{ url_for('static',filename='js/chart.js') }}" defer></script>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-      }
-    }
-  </script>
-  <script type="module" src="{{ url_for('static',filename='js/viewer.js') }}"></script>
-{% endblock %}
+{% block scripts %}{% include 'widgets/scripts.html' %}{% endblock %}

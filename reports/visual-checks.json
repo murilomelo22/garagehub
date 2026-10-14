@@ -1,0 +1,29 @@
+[
+  {
+    "width": 360,
+    "horizontal_scroll": false,
+    "svg_aspect_ratio": 2.381,
+    "studio_rendered": true,
+    "home_chart": true,
+    "saved_config": true,
+    "home_survives_deleted_golf": true
+  },
+  {
+    "width": 768,
+    "horizontal_scroll": false,
+    "svg_aspect_ratio": 2.3813,
+    "studio_rendered": true,
+    "home_chart": true,
+    "saved_config": true,
+    "home_survives_deleted_golf": true
+  },
+  {
+    "width": 1280,
+    "horizontal_scroll": false,
+    "svg_aspect_ratio": 2.381,
+    "studio_rendered": true,
+    "home_chart": true,
+    "saved_config": true,
+    "home_survives_deleted_golf": true
+  }
+]

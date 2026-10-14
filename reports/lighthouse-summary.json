@@ -1,0 +1,121 @@
+[
+  {
+    "page": "home",
+    "route": "index.html",
+    "version": "V0.2",
+    "lighthouse_version": "12.8.2",
+    "fetch_time": "2026-10-14T02:27:15.821Z",
+    "form_factor": "mobile",
+    "throttling_method": "simulate",
+    "scores": {
+      "performance": 98,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "runtime_error": null,
+    "warnings": []
+  },
+  {
+    "page": "feed",
+    "route": "feed.html",
+    "version": "V0.2",
+    "lighthouse_version": "12.8.2",
+    "fetch_time": "2026-10-14T02:08:29.656Z",
+    "form_factor": "mobile",
+    "throttling_method": "simulate",
+    "scores": {
+      "performance": 92,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "runtime_error": null,
+    "warnings": []
+  },
+  {
+    "page": "garagem",
+    "route": "garagem.html",
+    "version": "V0.2",
+    "lighthouse_version": "12.8.2",
+    "fetch_time": "2026-10-14T02:08:42.982Z",
+    "form_factor": "mobile",
+    "throttling_method": "simulate",
+    "scores": {
+      "performance": 98,
+      "accessibility": 100,
+      "best-practices": 96,
+      "seo": 100
+    },
+    "runtime_error": null,
+    "warnings": []
+  },
+  {
+    "page": "amigos",
+    "route": "amigos.html",
+    "version": "V0.2",
+    "lighthouse_version": "12.8.2",
+    "fetch_time": "2026-10-14T02:08:54.727Z",
+    "form_factor": "mobile",
+    "throttling_method": "simulate",
+    "scores": {
+      "performance": 99,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "runtime_error": null,
+    "warnings": []
+  },
+  {
+    "page": "perfil",
+    "route": "perfil-lucas_gti.html",
+    "version": "V0.2",
+    "lighthouse_version": "12.8.2",
+    "fetch_time": "2026-10-14T02:09:06.719Z",
+    "form_factor": "mobile",
+    "throttling_method": "simulate",
+    "scores": {
+      "performance": 94,
+      "accessibility": 100,
+      "best-practices": 96,
+      "seo": 100
+    },
+    "runtime_error": null,
+    "warnings": []
+  },
+  {
+    "page": "carro",
+    "route": "carro-1.html",
+    "version": "V0.2",
+    "lighthouse_version": "12.8.2",
+    "fetch_time": "2026-10-14T02:09:18.208Z",
+    "form_factor": "mobile",
+    "throttling_method": "simulate",
+    "scores": {
+      "performance": 97,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "runtime_error": null,
+    "warnings": []
+  },
+  {
+    "page": "acesso",
+    "route": "acesso.html",
+    "version": "V0.2",
+    "lighthouse_version": "12.8.2",
+    "fetch_time": "2026-10-14T02:09:29.781Z",
+    "form_factor": "mobile",
+    "throttling_method": "simulate",
+    "scores": {
+      "performance": 100,
+      "accessibility": 100,
+      "best-practices": 100,
+      "seo": 100
+    },
+    "runtime_error": null,
+    "warnings": []
+  }
+]

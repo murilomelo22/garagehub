@@ -18,6 +18,7 @@ from app import create_app
 from app.extensions import db
 from app.models import Follow, Friendship, Post, User, Vehicle
 from app.seed import seed_database
+from verify_pages import verify, VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "docs"
@@ -81,22 +82,33 @@ def export_html(source, routes, uploads, data, destination):
             else:
                 value = "garagem.html"
         return f"{attribute}={quote}{escape(value, quote=True)}{quote}"
-    source = re.sub(r'''(?<![\w-])(href|src|action|data-gallery-src)\s*=\s*(["'])(.*?)\2''', replace_url, source, flags=re.DOTALL)
+    source = re.sub(r'''(?<![\w-])(href|src|action|data-gallery-src|data-viewer-src|data-chart-src)\s*=\s*(["'])(.*?)\2''', replace_url, source, flags=re.DOTALL)
     source = re.sub(r'(<main\b[^>]*>)', r'\1' + BANNER, source, count=1)
-    source = re.sub(r'(<a[^>]*data-enter-visitor[^>]*>).*?(</a>)', r'\1Entrar como visitante\2', source, flags=re.DOTALL)
+    source = re.sub(r'<a[^>]*class="btn btn-secondary full"[^>]*data-enter-visitor[^>]*>.*?</a>', '<a class="aside-link" href="acesso.html">Sobre a demonstração →</a>', source, flags=re.DOTALL)
+    if destination=="index.html":
+        source=source.replace('data-home-demo="true"','data-home-demo="true" data-car-id="1"')
     source = source.replace('aria-label="Sair"', 'aria-label="Sair da demonstração"')
-    payload = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-    source = source.replace("</head>", f'<script id="demo-data" type="application/json">{payload}</script><script src="static/js/preview.js" defer></script></head>')
+    if destination=="404.html":
+        source=source.replace("<head>",f'<head><base href="{urlsplit(SITE_URL).path.rstrip("/")}/">',1)
+    source = source.replace("</head>", '<meta name="demo-data-url" content="static/demo-data.json"><script src="static/js/preview.js" defer></script></head>')
+    # Todo URL de código, inclusive módulos dinâmicos, aponta para o hash do conteúdo.
+    def version_asset(match):
+        attr,quote,url=match.groups()
+        path=urlsplit(unescape(url)).path
+        asset=OUTPUT/path
+        if path.endswith((".css",".js")) and asset.is_file():
+            url=path+"?v="+sha256(asset.read_bytes()).hexdigest()[:12]
+        return f"{attr}={quote}{escape(url,quote=True)}{quote}"
+    source=re.sub(r'(href|src|data-viewer-src|data-chart-src)\s*=\s*(["\'])(.*?)\2',version_asset,source)
     canonical = SITE_URL + "/" + ("" if destination == "index.html" else destination)
     source = re.sub(r'(<link rel="canonical" href=")[^"]*(")', lambda match: match[1] + canonical + match[2], source)
     source = re.sub(r'(<meta property="og:url" content=")[^"]*(")', lambda match: match[1] + canonical + match[2], source)
     source = re.sub(r'(<meta (?:property="og:image"|name="twitter:image") content=")[^"]*(")', lambda match: match[1] + SITE_URL + "/static/img/social-card.png" + match[2], source)
+    source=re.sub(r'http://localhost/garagem/(\d+)',lambda match:SITE_URL+f"/carro-{match[1]}.html",source)
     return source
 
 
-def build():
-    if OUTPUT.exists():
-        shutil.rmtree(OUTPUT)
+def render_export():
     OUTPUT.mkdir()
     shutil.copytree(ROOT / "app" / "static", OUTPUT / "static")
     (OUTPUT / ".nojekyll").touch()
@@ -112,7 +124,7 @@ def build():
             routes = {"/": "index.html", "/feed": "feed.html", "/amigos": "amigos.html",
                       "/garagem/": "garagem.html", "/garagem": "garagem.html",
                       "/perfil": "perfil-lucas_gti.html", "/perfil/editar": "perfil-lucas_gti.html",
-                      "/auth/login": "acesso.html", "/auth/cadastro": "garagem.html", "/garagem/novo": "garagem.html"}
+                      "/auth/login": "feed.html", "/auth/cadastro": "garagem.html", "/garagem/novo": "garagem.html"}
             routes.update({f"/u/{user.username}": f"perfil-{user.username}.html" for user in users})
             routes.update({f"/garagem/{car.id}": f"carro-{car.id}.html" for car in cars})
             uploads = {}
@@ -124,9 +136,9 @@ def build():
             following = list(db.session.scalars(db.select(Follow.followed_id).where(Follow.follower_id == users[0].id)))
             friends = list(db.session.scalars(db.select(Friendship)))
             utc = lambda value: value.replace(tzinfo=timezone.utc).isoformat()
-            data = {"version": 1, "exportedAt": datetime.now(timezone.utc).isoformat(), "demoUserId": users[0].id,
+            data = {"version": 2, "exportedAt": datetime.now(timezone.utc).isoformat(), "demoUserId": users[0].id,
                 "following": following, "friendships": {str(link.other_id(users[0].id)): link.status for link in friends if users[0].id in (link.user_low_id,link.user_high_id)},
-                "users": [{"id":user.id,"username":user.username,"city":user.city,"bio":user.bio,
+                "users": [{"id":user.id,"username":user.username,"city":user.city,"bio":user.bio,"createdAt":utc(user.created_at),
                            "followers":db.session.scalar(db.select(db.func.count()).select_from(Follow).where(Follow.followed_id==user.id,Follow.follower_id!=users[0].id))} for user in users],
                 "cars": [{"id":car.id,"userId":car.user_id,"brand":car.brand,"model":car.model,"year":car.year,"color":car.color,
                     "engine":car.engine,"transmission":car.transmission,"description":car.description,"photo":"uploads/"+uploads[car.photos[0].filename],
@@ -136,6 +148,7 @@ def build():
                 "posts":[{"id":post.id,"userId":post.user_id,"text":post.text,"createdAt":utc(post.created_at),"photo":"uploads/"+uploads[post.photo] if post.photo else None,
                     "likes":[like.user_id for like in post.likes],"comments":[{"id":comment.id,"userId":comment.user_id,"text":comment.text,"createdAt":utc(comment.created_at)} for comment in post.comments]} for post in db.session.scalars(db.select(Post).order_by(Post.created_at.desc()))]}
             demo_id = str(users[0].id)
+            (OUTPUT/"static"/"demo-data.json").write_text(json.dumps(data,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
         client = app.test_client()
         homepage = client.get("/")
         assert homepage.status_code == 200
@@ -155,23 +168,58 @@ def build():
         with app.test_request_context("/"):
             about = render_template_string('''{% extends 'base.html' %}{% block content %}
             <section class="panel empty-state"><span class="eyebrow">CONHEÇA O GARAGEHUB</span><h1>Entre como visitante.</h1>
-            <p>Explore o perfil de Lucas, nove carros e a comunidade. Você pode adicionar projetos, registrar medições, publicar fotos e experimentar o Garage Studio.</p>
-            <p>Os dados de exemplo e suas alterações ficam apenas neste navegador. Esta demonstração não cria uma conta real.</p>
-            <div class="actions"><a class="btn btn-primary" href="/auth/login">Entrar como visitante</a><a class="btn btn-secondary" href="/garagem/novo">Adicionar veículo</a></div></section>
+            <p>Explore o perfil de Lucas, 36 carros e 12 garagens da comunidade. Você pode adicionar projetos, registrar medições, publicar fotos e experimentar o Garage Studio.</p>
+            <p>Os projetos da demonstração e suas alterações ficam apenas neste navegador. Esta demonstração não cria uma conta real.</p>
+            <div class="actions"><a class="btn btn-primary" href="/feed" data-enter-visitor>Entrar como visitante</a><a class="btn btn-secondary" href="/garagem/novo">Adicionar veículo</a></div></section>
             {% endblock %}''',title="Demonstração interativa",meta_description="Teste o GarageHub como visitante: garagem, evolução, publicações e visualização 3D com dados salvos apenas no seu navegador.")
         (OUTPUT / "acesso.html").write_text(export_html(about,routes,uploads,data,"acesso.html"),encoding="utf-8")
         prototype = client.get("/garagem/1").text
-        prototype = prototype.replace("<title>Volkswagen Golf GTI · GarageHub</title>","<title>Projeto local · GarageHub</title>")
+        prototype = re.sub(r'<title>.*?</title>','<title>Seu projeto local · GarageHub</title>',prototype)
+        prototype = re.sub(r'(<meta (?:property="og:title"|name="twitter:title") content=")[^"]*(")',r'\1Seu projeto local · GarageHub\2',prototype)
+        prototype = re.sub(r'<script type="application/ld\+json">.*?</script>','<meta name="robots" content="noindex">',prototype,flags=re.S)
         prototype = prototype.replace("Conheça o projeto Volkswagen Golf GTI 2018 de lucas_gti: histórico de evolução, modificações e Garage Studio 3D.","Projeto de demonstração criado neste navegador: garagem, medições e configuração 3D local.")
         prototype = prototype.replace('content="Volkswagen Golf GTI · GarageHub"','content="Projeto local · GarageHub"')
         (OUTPUT / "carro.html").write_text(export_html(prototype,routes,uploads,data,"carro.html"),encoding="utf-8")
+        error=client.get("/pagina-inexistente")
+        if error.status_code!=404: raise RuntimeError("A página de erro não respondeu 404.")
+        (OUTPUT/"404.html").write_text(export_html(error.text,routes,uploads,data,"404.html"),encoding="utf-8")
         with app.app_context():
             db.session.remove()
             db.engine.dispose()
-    pages = sorted(path.name for path in OUTPUT.glob("*.html") if path.name != "carro.html")
+    pages = sorted(path.name for path in OUTPUT.glob("*.html") if path.name not in {"carro.html","404.html"})
     (OUTPUT / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+"".join(f"<url><loc>{SITE_URL}/{name if name!='index.html' else ''}</loc></url>" for name in pages)+"</urlset>",encoding="utf-8")
     (OUTPUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {SITE_URL}/sitemap.xml\n")
-    print(f"V0.1 exportada: {len(list(OUTPUT.glob('*.html')))} páginas em {OUTPUT}")
+    expected={"index.html","feed.html","garagem.html","amigos.html","acesso.html","carro.html","404.html"}
+    expected.update(f"perfil-{user.username}.html" for user in users)
+    expected.update(f"carro-{car.id}.html" for car in cars)
+    payload_hash=sha256((OUTPUT/"static"/"demo-data.json").read_bytes()).hexdigest()[:12]
+    # A comunidade fica em um arquivo cacheável, em vez de repetir o JSON em cada página.
+    for path in OUTPUT.glob("*.html"):
+        path.write_text(path.read_text().replace('static/demo-data.json','static/demo-data.json?v='+payload_hash),encoding="utf-8")
+    result=verify(OUTPUT,expected)
+    (OUTPUT/"build-manifest.json").write_text(json.dumps({**result,"pages":sorted(expected),"built_at":data["exportedAt"]},ensure_ascii=False,indent=2),encoding="utf-8")
+    return result
+
+
+def build(output=None):
+    """Só substitui a exportação publicada depois de renderizar e verificar todas as rotas."""
+    global OUTPUT
+    destination=Path(output or ROOT/"docs")
+    temporary=Path(tempfile.mkdtemp(prefix="garagehub-export-",dir=destination.parent))
+    OUTPUT=temporary/"site"
+    try:
+        result=render_export()
+        backup=temporary/"previous"
+        if destination.exists(): destination.rename(backup)
+        try: OUTPUT.rename(destination)
+        except Exception:
+            if backup.exists(): backup.rename(destination)
+            raise
+    finally:
+        OUTPUT=destination
+        shutil.rmtree(temporary)
+    print(f"{VERSION} exportada e verificada: {result['pages']} páginas em {destination}")
+    return result
 
 
 if __name__ == "__main__":

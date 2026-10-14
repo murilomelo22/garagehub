@@ -26,7 +26,7 @@ def test_demo_has_varied_coherent_measurements_and_interactions(app):
     with app.app_context():
         seed_database()
         for owner in db.session.scalars(db.select(User)):
-            assert len(owner.vehicles) >= 3
+            assert 2 <= len(owner.vehicles) <= 5
             for car in owner.vehicles:
                 a,b,c = car.stats
                 assert a.power < b.power < c.power
@@ -38,9 +38,9 @@ def test_demo_has_varied_coherent_measurements_and_interactions(app):
         posts = db.session.scalars(db.select(Post)).all()
         assert len({item.created_at for item in posts}) == len(posts)
         assert {len(item.comments) for item in posts} == {1,2,3}
-        assert {len(item.likes) for item in posts} == {1,2,3}
+        assert {1,2,3}.issubset({len(item.likes) for item in posts})
         assert db.session.scalar(db.select(db.func.count()).select_from(Like)) > 0
-        assert db.session.scalar(db.select(db.func.count()).select_from(Comment)) == 12
+        assert db.session.scalar(db.select(db.func.count()).select_from(Comment)) == 48
 
 
 def test_feed_all_following_and_brand_filters(client, app):
@@ -69,7 +69,7 @@ def test_friend_filters_and_stable_profile_destination(client, app):
         source=client.get(path).text
         assert re.search(r'href="/perfil">.*?<span>Perfil</span>', source, re.S)
         assert "Sua paixão. Sua comunidade." not in source
-        assert "V0.1" in source
+        assert "V0.2" in source
 
 
 def test_seo_unique_and_metric_selector_on_local_pages(client):

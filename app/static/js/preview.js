@@ -1,8 +1,10 @@
 /* A prévia usa somente dados fictícios e alterações locais, sem enviar fotos ou textos. */
-(() => {
+window.GaragePreviewReady = (async () => {
   if (document.body.dataset.mode !== "preview") return;
-  const seed = JSON.parse(document.getElementById("demo-data").textContent);
-  const storageKey = "garagehub:preview:v0.1";
+  const response = await fetch(document.querySelector('meta[name="demo-data-url"]').content);
+  if (!response.ok) throw new Error("Não foi possível carregar a demonstração.");
+  const seed = await response.json();
+  const storageKey = "garagehub:preview:v0.2";
   const f = window.GarageHub, e = f.escape;
   const clone = value => structuredClone(value);
   const normalize = value => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -18,11 +20,31 @@
   let state;
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey));
-    state = saved?.version === 1 && Array.isArray(saved.cars) && Array.isArray(saved.posts) && Array.isArray(saved.users) && Array.isArray(saved.following) ? saved : fresh();
+    state = saved?.version === 2 && Array.isArray(saved.cars) && Array.isArray(saved.posts) && Array.isArray(saved.users) && Array.isArray(saved.following) ? saved : fresh();
   } catch { state = fresh(); }
+  // A atualização incorpora a comunidade nova sem perder projetos e publicações locais da V0.1.
+  if (!localStorage.getItem(storageKey)) {
+    try {
+      const previous = JSON.parse(localStorage.getItem("garagehub:preview:v0.1"));
+      if (previous?.version===1 && Array.isArray(previous.cars) && Array.isArray(previous.posts) && Array.isArray(previous.users)) {
+        state.cars=[...previous.cars,...state.cars.filter(car=>Number(car.id)>9)];
+        state.posts=[...previous.posts,...state.posts.filter(post=>Number(post.id)>6)];
+        state.users=state.users.map(owner=>{const old=previous.users.find(u=>u.id===owner.id);return old?{...owner,city:old.city,bio:old.bio}:owner;});
+        state.following=previous.following;state.friendships=previous.friendships;state.visitor=previous.visitor;
+        localStorage.setItem(storageKey,JSON.stringify(state));
+      }
+    } catch { /* Sem armazenamento, os links e o conteúdo renderizado continuam disponíveis. */ }
+  }
   const user = () => state.users.find(item => item.id === state.demoUserId);
   const getCar = id => state.cars.find(item => String(item.id) === String(id));
-  const currentCar = () => getCar(document.body.dataset.carId);
+  // O exemplo público da home sobrevive à exclusão de carros na garagem do visitante.
+  const currentCar = () => {
+    if (document.body.dataset.homeDemo === "true") {
+      const example=seed.cars.find(car=>car.id===1);
+      return {...example,viewerConfig:state.homeViewerConfig||getCar(example.id)?.viewerConfig||example.viewerConfig};
+    }
+    return getCar(document.body.dataset.carId);
+  };
   const uid = () => "local-" + crypto.randomUUID();
   const profileUrl = owner => `perfil-${encodeURIComponent(owner.username)}.html`;
   const carUrl = car => String(car.id).startsWith("local-") ? `carro.html?id=${encodeURIComponent(car.id)}` : `carro-${car.id}.html`;
@@ -58,7 +80,7 @@
     const suggestions = document.querySelector(".suggestions");
     if (suggestions) {
       const owners = state.users.filter(owner => owner.id !== user().id && !state.following.includes(owner.id));
-      suggestions.innerHTML = '<h3>Conexões na pista</h3><p class="muted">Conheça outras garagens.</p>' + (owners.map(owner => `<div class="suggestion">${account(owner)}<button class="icon-button orange" data-follow="${owner.id}" aria-label="Seguir ${e(owner.username)}">＋</button></div>`).join("") || '<p class="muted">Você já acompanha todos por aqui.</p>') + '<a class="aside-link" href="amigos.html">Explorar comunidade →</a>';
+      suggestions.innerHTML = '<h3>Conexões na pista</h3><p class="muted">Conheça outras garagens.</p>' + (owners.slice(0,3).map(owner => `<div class="suggestion">${account(owner)}<button class="icon-button orange" data-follow="${owner.id}" aria-label="Seguir ${e(owner.username)}">＋</button></div>`).join("") || '<p class="muted">Você já acompanha todos por aqui.</p>') + '<a class="aside-link" href="amigos.html">Explorar comunidade →</a>';
     }
     document.querySelectorAll(".car-grid[data-owner-id]").forEach(grid => {
       const cars = state.cars.filter(car => String(car.userId) === grid.dataset.ownerId);
@@ -86,7 +108,11 @@
       document.querySelectorAll('script[src*="chart.js"],script[src*="viewer.js"]').forEach(element => element.remove());
       return;
     }
-    document.title = `${car.brand} ${car.model} · GarageHub`;
+    if (document.body.dataset.homeDemo === "true") {
+      const data=history(car);document.getElementById("power-data").textContent=JSON.stringify(data);window.GarageCharts?.refresh(data);
+      applyViewer(car);return;
+    }
+    document.title = `${car.brand} ${car.model} ${car.year} de @${state.users.find(u=>u.id===car.userId).username} · GarageHub`;
     document.querySelector("[data-car-model]").textContent = car.model;
     document.querySelector("[data-car-spec]").textContent = [car.engine, car.transmission, car.color].filter(Boolean).join(" · ");
     document.querySelector("[data-car-description]").textContent = car.description || "Um novo capítulo na garagem.";
@@ -103,6 +129,9 @@
     document.querySelector(".modifications-panel .count-badge").textContent = car.modifications.length;
     const data = history(car); document.getElementById("power-data").textContent = JSON.stringify(data);
     window.GarageCharts?.refresh(data);
+    applyViewer(car);
+  }
+  function applyViewer(car) {
     const config = car.viewerConfig, defaults = car.defaults;
     document.getElementById("viewer-config").textContent = JSON.stringify(config);
     document.getElementById("viewer-defaults").textContent = JSON.stringify(defaults);
@@ -144,17 +173,21 @@
     if (!grid) return;
     const q = document.querySelector(".community-search [name=q]").value;
     const filters = document.querySelector("[data-friends-filter]");
-    const city = filters.elements.city.value, brand = filters.elements.brand.value;
+    const city = filters.elements.city.value, brand = filters.elements.brand.value, order=filters.elements.order.value;
     const friendParams = new URLSearchParams();
     if (q) friendParams.set("q", q);
     if (city) friendParams.set("city", city);
     if (brand) friendParams.set("brand", brand);
+    if (order!=="recent") friendParams.set("order",order);
     historyReplace(friendParams);
     const owners = state.users.filter(owner => owner.id !== user().id).filter(owner => {
       const cars = state.cars.filter(car => car.userId === owner.id);
       const searchable = normalize([owner.username, owner.city, ...cars.map(car => car.brand + " " + car.model)].join(" "));
       return (!q || searchable.includes(normalize(q))) && (!city || owner.city === city) && (!brand || cars.some(car => car.brand === brand));
     });
+    const carsCount=owner=>state.cars.filter(car=>car.userId===owner.id).length;
+    const likesCount=owner=>state.posts.filter(post=>post.userId===owner.id).reduce((sum,post)=>sum+post.likes.length,0);
+    owners.sort((a,b)=>(order==="cars"?carsCount(b)-carsCount(a):order==="likes"?likesCount(b)-likesCount(a):Date.parse(b.createdAt)-Date.parse(a.createdAt))||a.username.localeCompare(b.username,"pt-BR"));
     grid.innerHTML = owners.map(owner => `<article class="panel person-card"><a href="${profileUrl(owner)}">${avatar(owner)}<h3>${e(owner.username)}</h3></a><p class="muted">${e(owner.city)}</p><p class="person-bio">${e(owner.bio)}</p><span class="tag">${state.cars.filter(car => car.userId === owner.id).length} veículos</span><div class="person-actions">${followButton(owner)}${friendshipButton(owner)}</div></article>`).join("") || '<section class="panel empty-state"><h3>Nenhuma garagem encontrada.</h3><p>Tente outro nome, cidade ou modelo. Há sempre um projeto para descobrir.</p><button class="btn btn-secondary" data-clear-filters>Limpar filtros</button></section>';
     const friends = document.querySelector(".friends-list");
     friends.innerHTML = state.users.filter(owner => owner.id !== user().id && state.friendships[owner.id] === "accepted").map(owner => `<div class="friend-row">${account(owner)}${friendshipButton(owner)}</div>`).join("") || '<p class="muted">Conheça a comunidade e faça novas conexões.</p>';
@@ -211,16 +244,18 @@
       title = "Editar perfil de exemplo";
       content = field("city","Cidade",user().city,'maxlength="80"') + `<label>Sobre você<textarea name="bio" maxlength="500" rows="4">${e(user().bio)}</textarea></label>`;
     }
-    modal.innerHTML = `<div class="modal-heading"><div><span class="eyebrow">SEU PRÓXIMO CAPÍTULO</span><h2 id="modal-title">${title}</h2></div><button type="button" class="icon-button" data-close-modal aria-label="Fechar formulário">×</button></div><p id="modal-note" class="local-note">Demonstração: os dados ficam apenas neste navegador.</p><form class="form-stack" data-modal-kind="${kind}" data-modal-car="${e(car?.id || "")}">${content}<p class="form-error" role="alert" hidden></p><div class="actions"><button class="btn btn-primary">Salvar ${kind === "evolution" ? "medição" : kind === "modification" ? "modificação" : kind === "profile" ? "perfil" : "veículo"}</button><button type="button" class="btn btn-quiet" data-close-modal>Cancelar</button></div></form>`;
+    modal.innerHTML = `<div class="modal-heading"><div><span class="eyebrow">SEU PRÓXIMO CAPÍTULO</span><h2 id="modal-title">${title}</h2></div><button type="button" class="icon-button" data-close-modal aria-label="Fechar formulário">×</button></div><p id="modal-note" class="local-note">Demonstração: os dados ficam apenas neste navegador.</p><form class="form-stack" novalidate data-modal-kind="${kind}" data-modal-car="${e(car?.id || "")}">${content}<p id="modal-validation" class="form-error" role="alert" hidden></p><div class="actions"><button class="btn btn-primary">Salvar ${kind === "evolution" ? "medição" : kind === "modification" ? "modificação" : kind === "profile" ? "perfil" : "veículo"}</button><button type="button" class="btn btn-quiet" data-close-modal>Cancelar</button></div></form>`;
     if (!modal.open) modal.showModal();
     modal.querySelector("input,textarea")?.focus();
   }
+  modal.addEventListener("input",event=>{event.target.removeAttribute("aria-invalid");event.target.removeAttribute("aria-describedby");});
   async function photoData(file) {
     if (!file || !file.size) return null;
     if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 6 * 1024 * 1024) throw new Error("Escolha uma foto JPG, PNG ou WebP de até 6 MB.");
     const url = URL.createObjectURL(file);
     try {
       const image = new Image(); image.src = url; await image.decode();
+      if (image.width*image.height>25000000) throw new Error("Escolha uma foto com até 25 megapixels.");
       const scale = Math.min(1, 1200 / Math.max(image.width, image.height));
       const canvas = document.createElement("canvas"); canvas.width = Math.round(image.width * scale); canvas.height = Math.round(image.height * scale);
       canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
@@ -235,6 +270,12 @@
     const text = name => String(data.get(name) || "").trim();
     const button = form.querySelector('[type="submit"],.btn-primary'); button.disabled = true;
     try {
+      const invalid=[...form.elements].find(input=>input.willValidate && !input.checkValidity());
+      if (invalid) {
+        invalid.setAttribute("aria-invalid","true");invalid.setAttribute("aria-describedby","modal-validation");invalid.focus();
+        const name=invalid.closest("label")?.childNodes[0].textContent.trim()||"Este campo";
+        throw new Error(`${name}: ${invalid.validity.valueMissing?"preencha este campo.":invalid.validity.rangeUnderflow||invalid.validity.rangeOverflow?`use um valor entre ${invalid.min} e ${invalid.max}.`:invalid.validity.stepMismatch?"confira o intervalo permitido.":"confira o valor informado."}`);
+      }
       if (kind === "car" || kind === "edit") {
         if (!text("brand") || !text("model") || !text("color")) throw new Error("Preencha marca, modelo e cor.");
         const photo = await photoData(data.get("photo")), id = car?.id || uid();
@@ -287,6 +328,10 @@
       if (button.hasAttribute("data-close-modal")) { event.preventDefault(); modal.close(); }
       else if (button.dataset.switchModal) { event.preventDefault(); openModal(button.dataset.switchModal, modal.querySelector("form").dataset.modalCar, trigger); }
       else if (button.dataset.previewOpen) { event.preventDefault(); openModal(button.dataset.previewOpen, document.querySelector("#viewer-form") ? document.body.dataset.carId : button.dataset.previewId, button); }
+      else if (button.hasAttribute("data-restore-demo")) {
+        event.preventDefault(); if (!confirm("Restaurar a demonstração? Os projetos, fotos e alterações locais serão apagados deste navegador.")) return;
+        const restored=fresh();restored.visitor=true;localStorage.setItem(storageKey,JSON.stringify(restored));localStorage.removeItem("garagehub:preview:v0.1");state=restored;location.reload();
+      }
       else if (button.hasAttribute("data-enter-visitor")) { event.preventDefault(); commit(draft => { draft.visitor=true; }); location.href="feed.html"; }
       else if (button.dataset.like) {
         event.preventDefault(); const id=button.dataset.like;
@@ -353,14 +398,26 @@
   const feedFilter=document.querySelector("[data-feed-filter]");
   if (feedFilter) { feedFilter.elements.filter.value=params.get("filter")==="following" ? "following" : "all"; feedFilter.elements.brand.value=params.get("brand") || ""; }
   const friendFilter=document.querySelector("[data-friends-filter]");
-  if (friendFilter) { friendFilter.elements.city.value=params.get("city") || ""; friendFilter.elements.brand.value=params.get("brand") || ""; }
+  if (friendFilter) { friendFilter.elements.city.value=params.get("city") || ""; friendFilter.elements.brand.value=params.get("brand") || ""; friendFilter.elements.order.value=["recent","cars","likes"].includes(params.get("order"))?params.get("order"):"recent"; }
   window.GaragePreview = {
     saveViewer(config) {
       const car=currentCar(); if (!car) throw new Error("O projeto não foi encontrado neste navegador.");
       if (!/^#[\da-f]{6}$/i.test(config.paint_color) || !/^#[\da-f]{6}$/i.test(config.wheel_color) || !Number.isFinite(config.wheel_size) || config.wheel_size<.8 || config.wheel_size>1.3 || !["original","lowered"].includes(config.suspension)) throw new Error("Confira a configuração do modelo 3D.");
-      commit(draft => { draft.cars.find(item => item.id===car.id).viewerConfig=config; });
+      commit(draft => {
+        if (document.body.dataset.homeDemo === "true") draft.homeViewerConfig=config;
+        else draft.cars.find(item => item.id===car.id).viewerConfig=config;
+      });
     }
   };
   renderDetail(); render();
-  if (state.visitor) document.querySelector(".preview-banner strong").textContent="VISITANTE · "+user().username;
-})();
+  if (!location.pathname.endsWith("/index.html") && !location.pathname.endsWith("/acesso.html") && document.body.dataset.homeDemo!=="true") {
+    try { commit(draft=>{draft.visitor=true;}); } catch(error) {toast(error.message);}
+  }
+  if (state.visitor) {
+    document.querySelector(".preview-banner strong").textContent="VISITANTE · "+user().username;
+    document.querySelector("[data-visitor-status]").hidden=false;
+  }
+})().catch(error=>{
+  const banner=document.querySelector(".preview-banner span");if(banner)banner.textContent="A demonstração não carregou. Atualize a página para testar os formulários.";
+  console.warn("Demonstração indisponível:",error.message);
+});

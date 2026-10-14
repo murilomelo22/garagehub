@@ -4,7 +4,7 @@
     <div class="hero-copy">
       <span class="eyebrow">A COMUNIDADE DE QUEM VIVE CARROS</span>
       <h1>
-        Sua paixão merece
+        Seu projeto merece
         <br>
         uma <em>garagem.</em>
       </h1>
@@ -12,16 +12,24 @@
         Cada carro tem uma história. Compartilhe a sua, acompanhe seus projetos e conecte-se com quem fala a mesma língua.
       </p>
       <div class="actions">
-        <a class="btn btn-primary" href="{{ url_for('auth.register') }}">Começar minha garagem {{ icon("arrow") }}</a><a class="btn btn-secondary" href="{{ url_for('auth.login') }}">Já tenho conta</a>
+        <a class="btn btn-primary" href="{{ url_for('social.feed') if preview_mode else url_for('auth.register') }}" {{ 'data-enter-visitor' if preview_mode }}>Começar minha garagem {{ icon("arrow") }}</a>
       </div>
       <div class="hero-caption">
         <span class="status-dot"></span> Feito para quem gosta de ir além do original.
       </div>
     </div>
-    <img class="hero-car"
-         src="{{ url_for('static', filename='img/car.svg') }}"
-         alt="Ilustração de um carro esportivo vermelho">
     <span class="hero-number">01 / GARAGE CULTURE</span>
+  </section>
+  <section class="home-demo" aria-labelledby="demo-title">
+    <div class="section-heading"><div><span class="eyebrow">DA IDEIA AO PRÓXIMO PASSO</span><h2 id="demo-title">Experimente sua próxima garagem.</h2></div></div>
+    <p class="muted">Personalize o modelo conceitual e acompanhe a evolução do Golf GTI. Os testes do estúdio ficam neste navegador.</p>
+    {% set is_owner = true %}{% include 'widgets/studio.html' %}
+    <section class="panel chart-panel home-chart"><div class="section-heading"><div><span class="eyebrow">VOLKSWAGEN / GOLF GTI 2018</span><h2>Cada medição conta.</h2></div><span class="tag">230 → 268 cv</span></div>
+      <div class="metric-control"><label for="chart-metric">Métrica</label><select id="chart-metric"><option value="power">Potência (cv)</option><option value="torque">Torque (Nm)</option><option value="zero_to_hundred">0–100 km/h (s)</option><option value="consumption">Consumo (km/l)</option></select></div>
+      <p id="metric-change" class="metric-change" aria-live="polite"></p><div class="chart-container"><div id="power-chart" role="group" aria-label="Evolução do Golf GTI"></div></div>
+      <p class="muted">Filtro esportivo: +3 cv. Remapeamento: +35 cv. Valores ilustrativos, com torque e aceleração acompanhando a potência.</p>
+      <details class="history"><summary>Ver histórico de medições</summary><div class="table-scroll"><table><thead><tr><th>Data</th><th>cv</th><th>Nm</th><th>0–100 s</th><th>km/l</th></tr></thead><tbody>{% for day in chart.labels %}{% set measurement_index = loop.index0 %}<tr><td>{{ day[8:10] }}/{{ day[5:7] }}/{{ day[:4] }}</td>{% for key in ['power','torque','zero_to_hundred','consumption'] %}<td>{{ chart[key][measurement_index]|number_br }}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div></details>
+    </section>
   </section>
   <div class="section-heading">
     <div>
@@ -43,3 +51,5 @@
 </article>
 </div>
 {% endblock %}
+
+{% block scripts %}{% include 'widgets/scripts.html' %}{% endblock %}

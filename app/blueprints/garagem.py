@@ -14,7 +14,7 @@ bp = Blueprint("garagem", __name__, url_prefix="/garagem")
 @login_required
 def index():
     return render_template(
-        "garagem/index.html", title="Minha garagem", vehicles=current_user.vehicles
+        "garagem/index.html", title="Minha garagem", meta_description="Organize os carros da sua garagem: fotos, fichas, medições de desempenho e próximos passos de cada projeto.", vehicles=current_user.vehicles
     )
 
 
@@ -96,7 +96,8 @@ def detail(vehicle_id):
     config = DEFAULT_CONFIG | {"paint_color": {"Vermelho": "#c94432", "Branco": "#c8c9c6", "Cinza": "#767d89", "Azul": "#244f91", "Preto": "#24272d"}.get(vehicle.color, DEFAULT_CONFIG["paint_color"])}
     return render_template(
         "garagem/detail.html",
-        title=vehicle.title,
+        vehicle_schema={"@context":"https://schema.org","@type":"Vehicle","name":f"{vehicle.title} {vehicle.year}","brand":{"@type":"Brand","name":vehicle.brand},"model":vehicle.model,"vehicleModelDate":str(vehicle.year),"color":vehicle.color,"description":vehicle.description or f"Projeto de {vehicle.owner.username}","url":url_for("garagem.detail",vehicle_id=vehicle.id,_external=True)},
+        title=f"{vehicle.title} {vehicle.year} de @{vehicle.owner.username}",
         vehicle=vehicle,
         chart=chart,
         viewer_config=config | (vehicle.viewer_config or {}),

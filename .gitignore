@@ -8,3 +8,5 @@ __pycache__/
 !.env.example
 test-results/
 tela-inicial.png
+reports/lighthouse/*.report.html
+reports/lighthouse/*.report.json
